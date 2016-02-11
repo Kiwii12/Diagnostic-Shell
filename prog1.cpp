@@ -218,5 +218,16 @@ bool systat()
 	getline(fin, data);
 	cout << "uptime: " << data << endl;
 
+	fin.open("/proc/meminfo");
+	if (fin.fail())
+	{
+		cerr << "Could not open meminfo file" << endl;
+		return false;
+	}
+	getline(fin, data);
+	cout << "meminfo: " << data << endl;
+
 	
 }
+
+openProcFile(ifstream fin,)
