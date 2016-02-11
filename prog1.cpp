@@ -119,7 +119,7 @@ int main()
         else
         {
             char* nonConstantString;
-            char* arg_list[64];
+            char* arg_list[300];
             for( int i = 0; i < (entry.size() - 1); i++ )
             {
                 strcpy(nonConstantString, (entry.at(i)).c_str());
