@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include <unistd.h>
+//#include <unistd.h>
 #include <fstream>
 
 //For Parsing the bloody entry because C++ doesn't seem to have a built in 
@@ -17,6 +17,8 @@ using namespace std;
 bool cmdnm( string pid );
 
 int spawn(char* program, char** arg_list);
+
+bool systat();
 
 char **d2array (int rows);
 
@@ -74,23 +76,25 @@ int main()
         }
         else if( entry1 == "cd" )
         {
-		if( entry.size() != 2 ) 
-		{
-			cout << "Usage: cd" << endl;
-			cout << "       cd <absolut path>" << endl;
-			cout << "       cd <relative path>" << endl;
-		}
-		else
-		{
-			chdir(entry2.c_str());
-		}
+			if( entry.size() != 2 ) 
+			{
+				cout << "Usage: cd" << endl;
+				cout << "       cd <absolut path>" << endl;
+				cout << "       cd <relative path>" << endl;
+			}
+			else
+			{
+//				chdir(entry2.c_str());
+			}
         }
         else if( entry1 == "pwd" )
         {
+			//getcwd()
 			cout << "Usage: pwd" << endl;
         }
         else if( entry1 == "signal" )
         {
+			//kill?
 			cout << "Usage: signal <signal_num> <pid>" << endl;
         }
 	else if (entry1 == "help")
@@ -139,15 +143,6 @@ int main()
 bool cmdnm( string pid )
 {
 // USER PID	%CPU	%MEM	VSZ	RSS	TTY	STAT	Start	Time	COMMAND
-	string user;
-	string cpu;
-	string mem;
-	string vsz;
-	string rss;
-	string tty;
-	string stat;
-	string start;
-	string time;
 	string command;
 	ifstream fin;
 
@@ -176,34 +171,52 @@ bool cmdnm( string pid )
    the spawned process.  */
 int spawn (char* program, char** arg_list)
 {
-  pid_t child_pid;
+  //pid_t child_pid;
 
   /* Duplicate this process.  */
-  child_pid = fork ();
-  if (child_pid != 0)
+  //child_pid = fork ();
+/*  if (child_pid != 0)
     /* This is the parent process.  */
-    return child_pid;
+/*    return child_pid;
   else {
     /* Now execute PROGRAM, searching for it in the path.  */
-    execvp (program, arg_list);
+    //execvp (program, arg_list);
     /* The execvp function returns only if an error occurs.  */
     cerr << "an error occurred in execvp" << endl;
     abort ();
-  }
+//  }
 }
 
+
+//systat
 /*
-char **d2array (int rows)
-{	
-	//makes sure the array is initialized to nullptr
-	char *this_array = nullptr;
-
-	//allocates memory
-	this_array = new (nothrow) *char * [rows];
-
-	//checks if memory was allocated
-	if (this_array == nullptr)
-		return nullptr;
-	return this_array;
-}
+version: /proc/version
+uptime: /proc/uptime
+memtotal : /proc/meminfo first line
+memfree: /proc/meminfo second line
+cpuinfo: /proc/cpuinfo lines 2-9
 */
+bool systat()
+{
+	ifstream fin;
+	string data;
+	fin.open("/proc/version");
+	if (fin.fail())
+	{
+		cerr << "Could not open version file" << endl;
+		return false;
+	}
+	getline(fin, data);
+	cout << "Version: " << data << endl;
+
+	fin.open("/proc/uptime");
+	if (fin.fail())
+	{
+		cerr << "Could not open uptime file" << endl;
+		return false;
+	}
+	getline(fin, data);
+	cout << "uptime: " << data << endl;
+
+	
+}
