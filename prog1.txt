@@ -1,9 +1,10 @@
 DSH
 
 Description
-    This is a process identification program and simple shell. This program will introduce unix environment, system calls, signals, the proc filesystem and the fork / exec system calls.   It will be a command line program with executable name: dsh.    It should present a prompt with a prompt string:  dsh> and accept commands to be executed at the prompt.
+    This is a process idetification program and simple shell. This program will introduce unix environment, system calls, signals, the proc filesystem and the fork / exec system calls.   It will be a command line program with executable name: dsh.    It should present a prompt with a prompt string:  dsh> and accept commands to be executed at the prompt.
     
 - THIS WILL ONLY RUN ON LINUX -
+- SIGNAL WILL ONLY WORK IF YOU HAVE PERMISION TO USE KILL -
 
 Algorithms and libraries used:
     As for Algorithms, nothing significant was used.
@@ -25,12 +26,12 @@ List of Libraries:
 Functions and Program structure
 Structure: the main program uses something very close to a switch statement.
 However this is done as if elses for the use of strings. The Program is
-Sequential. To add to modularity, and make main easier to read, many chunks
+sequencial. To add to modularity, and make main easier to read, many chunks
 of code were pulled out into smaller functions. All of which can be found below main.
 
 List of functions:
     //function taken from sample code
-    spawn - creates a fork and executes on it
+    spawn - creates a fork and executs on it
 
     // primary functions for loop
     cmdnm - displays the command line call for a process id
@@ -49,11 +50,11 @@ List of functions:
 
 Compiling the program:
     There is a make file provide. Using the make command will compile the
-Program. Also the command: "g++ -o dsh dsh.cpp -Wall -g -std=c++11" will as well
+program. Also the command: "g++ -o dsh dsh.cpp -Wall -g -std=c++11" will as well
 
 Submitted Files:
     prog1.pdf, dsh.cpp, Makefile
     
 prog1.pdf = This descriptive document of this project
 dsh.cpp = The code for this project
-Makefile = Compiling tool for code
+Makefile = compiling tool for code
