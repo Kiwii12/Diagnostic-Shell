@@ -1,20 +1,18 @@
 #-----------------------------------------------------------------------
 
-# Use the GNU C/C++ compiler:
-CC = gcc
-CPP = g++
+CC=g++
 
-# COMPILER OPTIONS:
+CFLAGS=-c -g -Wall -std=c++11
 
-CFLAGS = -c
+all: dsh
 
-#OBJECT FILES
-OBJS = prog1.o
+dsh: dsh1
+	${CC} -g -Wall -std=c++11 dsh.o -o dsh
 
+dsh1:
+	${CC} ${CFLAGS} dsh.cpp -o dsh.o
 
-dsh: prog1.o
-    ${CC} -lm ${OBJS} -o dsh
-
-prog1.o: prog1.cpp
+clean:
+	rm *o dsh
 
 #-----------------------------------------------------------------------
