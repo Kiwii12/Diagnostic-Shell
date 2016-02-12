@@ -4,8 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
-//#include <unistd.h>
+#include <unistd.h>
 #include <fstream>
+#include <signal.h>
 
 //For Parsing the bloody entry because C++ doesn't seem to have a built in 
 //function for such a task
@@ -24,6 +25,9 @@ bool displayProcFile(string filename);
 bool displayProcFileMeminfo();
 bool displayProcFileCPUInfo();
 
+void help();
+void cwd();
+
 int main()
 {
 	//For parsing the shell arguments
@@ -32,12 +36,9 @@ int main()
 	string entry1;
 	string entry2;
 
-
-	// Faking being a shell here
-    cout << "dsh > ";
-
     while(true)
     {
+    cout << "dsh > ";
 	// Grab cin inside the infinant loop in the off chance the user wants
 	// to maybe use a second command
 	getline(cin, entry1);
@@ -51,94 +52,94 @@ int main()
 	if (!entry.empty())
 	{
 		entry1 = entry.at(0);
-	//	cout << entry.at(0) << " is entry 0" << endl;
 	}
 
-	/*// Start of "Switch"
-	if (entry.size() > 3)
-	{
-		cout << " Too many commands " << endl;
-	}*/
-        if( entry1 == "\n"){ }
-        else if( entry1 == "cmdnm" )
+    if( entry1 == "\n"){ }
+    else if( entry1 == "cmdnm" )
+    {
+        if( entry.size() != 2 )
         {
-		if( entry.size() != 2 )
-		{
-			cout << "Usage: cmdnm <pid>" << endl;
-		}
-		cmdnm(entry2);
+            cout << "Usage: cmdnm <pid>" << endl;
         }
-        else if( entry1 == "systat" )
+        else cmdnm(entry2);
+    }
+    else if( entry1 == "systat" )
+    {
+        if( entry.size() > 1)
         {
-		cout << "Usage: systat" << endl;
+            cout << "Usage: systat" << endl;
         }
-        else if( entry1 == "exit" )
+        else systat();
+    }
+    else if( entry1 == "exit" )
+    {
+        exit(0);
+    }
+    else if( entry1 == "cd" )
+    {
+        if( entry.size() != 2 ) 
         {
-            exit(0);
+            cout << "Usage: cd" << endl;
+            cout << "       cd <absolut path>" << endl;
+            cout << "       cd <relative path>" << endl;
         }
-        else if( entry1 == "cd" )
-        {
-			if( entry.size() != 2 ) 
-			{
-				cout << "Usage: cd" << endl;
-				cout << "       cd <absolut path>" << endl;
-				cout << "       cd <relative path>" << endl;
-			}
-			else
-			{
-//				chdir(entry2.c_str());
-			}
-        }
-        else if( entry1 == "pwd" )
-        {
-			//getcwd()
-			cout << "Usage: pwd" << endl;
-        }
-        else if( entry1 == "signal" )
-        {
-			//kill?
-			cout << "Usage: signal <signal_num> <pid>" << endl;
-        }
-	else if (entry1 == "help")
-	{
-		cout << "Usage: cmdnm <pid>" << endl;
-		cout << "     Will return the command string " <<
-		"(name) that started the process for the given id" << endl;
-		cout << "Usage: signal <signal_num> <pid>" << endl;
-		cout << "     This function will send a signal to a process" << endl;
-		cout << "Usage: systat" << endl;
-		cout << "     Print out some process information using /proc/* files" << endl
-		<< "     print (to stdout) Linux version and system uptime." << endl
-		<< "     print memory usage information : memtotal and memfree." << endl
-		<< "     print cpu information : vendor id through cache size." << endl;
-		cout << "Usage: cd" << endl;
-		cout << "     Displays files in current directory" << endl;
-		cout << "       cd <absolut path>" << endl;
-		cout << "     Changes to the given directory" << endl;
-		cout << "       cd <relative path>" << endl;
-		cout << "     Changes to the given directory based on"
-		<< " the files in the current directory" << endl;
-		cout << "Usage: pwd" << endl;
-		cout << "     Print out the current working "
-		<< "directory (the path from /)" << endl;
-	}
         else
         {
-			char nonConstantString[300];
-            char* arg_list[300];
-            for( int i = 0; i < (entry.size() ); i++ )
-            {
-                strcpy_s(nonConstantString, 300, (entry.at(i)).c_str());
-                arg_list[i] = nonConstantString;
-            }
-            arg_list[entry.size()] = nullptr;
-            //cout << "Invalid Command" << endl;
-            strcpy_s(nonConstantString, (entry1.c_str()));
-            spawn( nonConstantString, arg_list );
+            chdir(entry2.c_str());
         }
-
+    }
+    else if( entry1 == "pwd" )
+    {
+        if( entry.size() > 1 )
+        {
+        cout << "Usage: pwd" << endl;
+        }
+        else cwd();
+    }
+    else if( entry1 == "signal" )
+    {
+        //kill?
+        if ( entry.size() != 3 )
+        {
+            cout << "Usage: signal <signal_num> <pid>" << endl;
+        }
+        else
+        {
+            if( kill( stoi(entry.at(2)), 0 ) != 0 )
+            {
+                if(kill( stoi(entry.at(2)), stoi(entry.at(1))) == 0)
+                {
+                    cout << "Invalid Signal" << endl;
+                }
+            }
+            else
+            {
+                cout << "Invalid pid number, perhaps reversed? " 
+                << endl;
+            }
+            cout << "entry(2) = " << stoi(entry.at(2)) <<
+                " - entry(1) = " << stoi(entry.at(1)) << endl;
+        }
+    }
+	else if (entry1 == "helpThis")
+	{
+        help();
+	}
+    else //Fork Exec
+    {
+        char nonConstantString[300];
+        char* arg_list[300];
+        for( int i = 0; i < int(entry.size() ); i++ )
+        {
+            strcpy(nonConstantString, (entry.at(i)).c_str());
+            arg_list[i] = nonConstantString;
+        }
+        arg_list[entry.size()] = nullptr;
+        //cout << "Invalid Command" << endl;
+        strcpy(nonConstantString, (entry1.c_str()));
+        spawn( nonConstantString, arg_list );
+    }
 	entry.clear();
-        cout << "dsh > ";
     }
 }
 
@@ -154,9 +155,8 @@ bool cmdnm( string pid )
 		cerr << "Could not open cmdline file" << endl;
 		return false;
 	}
-	getline( fin, command );
-	cout << command << " is in command" << endl;
-	cout << pid << " " << command << endl;
+	while( getline( fin, command ) )
+	cout << command << endl;
 	return true;
 }
 
@@ -176,16 +176,19 @@ int spawn (char* program, char** arg_list)
   pid_t child_pid;
 
   /* Duplicate this process.  */
-  child_pid = fork ();
+  child_pid = fork();
   if (child_pid != 0)
+  {
     /* This is the parent process.  */
     return child_pid;
-  else {
+  }
+  else 
+  {
     /* Now execute PROGRAM, searching for it in the path.  */
     execvp (program, arg_list);
     /* The execvp function returns only if an error occurs.  */
-    cerr << "an error occurred in execvp" << endl;
-    abort ();
+    cerr << "No Command " << string(program) << " found" << endl;
+    abort();
   }
 }
 
@@ -262,3 +265,43 @@ bool displayProcFileCPUInfo()
 	fin.close();
 	return true;
 }
+
+void help()
+{
+    cout << "Usage: cmdnm <pid>" << endl;
+	cout << "     Will return the command string " <<
+    "(name) that started the process for the given id" << endl;
+    cout << "Usage: signal <signal_num> <pid>" << endl;
+    cout << "     This function will send a signal to a process"
+        << endl;
+    cout << "Usage: systat" << endl;
+    cout << "     Print out some process information using" <<
+        " /proc/* files" << endl
+    << "     print (to stdout) Linux version and system uptime."
+        << endl
+    << "     print memory usage information : memtotal and" <<
+        " memfree." << endl
+    << "     print cpu information : vendor id through" <<
+        " cache size." << endl;
+    cout << "Usage: cd" << endl;
+    cout << "     Displays files in current directory" << endl;
+    cout << "       cd <absolut path>" << endl;
+    cout << "     Changes to the given directory" << endl;
+    cout << "       cd <relative path>" << endl;
+    cout << "     Changes to the given directory based on"
+    << " the files in the current directory" << endl;
+    cout << "Usage: pwd" << endl;
+    cout << "     Print out the current working "
+    << "directory (the path from /)" << endl;   
+}
+
+void cwd()
+{
+    char *nonConstantString = get_current_dir_name();
+    //strcpy(nonConstantString, (entry1.c_str()));
+    //nonConstantString = 
+    cout << "Current Directory: " << string(nonConstantString) 
+        << endl;
+    free( nonConstantString );
+}
+               
