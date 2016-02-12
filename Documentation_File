@@ -1,0 +1,59 @@
+DSH
+
+Description
+    This is a process idetification program and simple shell. This program will introduce unix environment, system calls, signals, the proc filesystem and the fork / exec system calls.   It will be a command line program with executable name: dsh.    It should present a prompt with a prompt string:  dsh> and accept commands to be executed at the prompt.
+    
+- THIS WILL ONLY RUN ON LINUX -
+
+Algorithms and libraries used:
+    As for Algorithms, nothing significant was used.
+List of Libraries:
+    //input
+        <iostream> 
+    //string functions
+        <string>, <string.h>   
+
+    //for system function commands
+        <stdio.h>, <stdlib.h>, <sys/types.h>, <unistd.h>   
+
+    //to open files
+        <fstream>  
+
+    //for kill command
+        <signal.h> 
+
+Functions and Program structure
+Structure: the main program uses something very close to a switch statement.
+However this is done as if elses for the use of strings. The Program is
+sequencial. To add to modularity, and make main easier to read, many chunks
+of code were pulled out into smaller functions. All of which can be found below main.
+
+List of functions:
+    //function taken from sample code
+    spawn - creates a fork and executs on it
+
+    // primary functions for loop
+    cmdnm - displays the command line call for a process id
+    help - displace information for custom commands (command is helpThis)
+    cwd - displays current working directory
+    signal - sends a signal to a process
+
+    systat - displays system statics
+    //systat helper functions
+    displayProcFile - displays the first line of a file
+    displayProcFileMeminfo - displays 2 lines of meminfo file
+    displayProcFileCPUInfo - displays lines 2 - 9 of cpuinfo file
+    
+- Note Many of these are not direct commands in the program
+- Note spawn was taken from under the Gnu Public License.  Thus this code is now as well.  You can find out more information about Gnu codes and the GPL at   http://www.gnu.org/ .
+
+Compiling the program:
+    There is a make file provide. Using the make command will compile the
+program. Also the command: "g++ -o dsh dsh.cpp -Wall -g -std=c++11" will as well
+
+Submitted Files:
+    prog1.pdf, dsh.cpp, Makefile
+    
+prog1.pdf = This descriptive document of this project
+dsh.cpp = The code for this project
+Makefile = compiling tool for code

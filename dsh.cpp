@@ -1,11 +1,102 @@
+/***************************************************************************//**
+ * @file File holds functions to run a self systaning shell
+ *
+ * @brief Contains dsh shell and helper functions
+*******************************************************************************/
+
+/*************************************************************************//**
+ * @file 
+ *
+ * @mainpage Program 1 - Dsh
+ * 
+ * @section course_section Course Information 
+ *
+ * @author Johnny Ackerman
+ * 
+ * @date Feb 12, 2016
+ * 
+ * @par Professor: 
+ *         Dr. McGough
+ * 
+ * @par Course: 
+ *         CSC-456 - M001-2016SP -  2:00-2:50 PM MWTF
+ * 
+ * @par Location: 
+ *         McLaury-306
+ *
+ * @section program_section Program Information 
+ * 
+ * @details Process identification program and simple shell
+ *
+ * Introduction to unix environment, system calls, signals, the proc filesystem
+ * and the fork / exec system calls.
+ *
+ * Program is a command line executible string starting with dsh>. It will
+ * accept commands to be executed at the prompt.
+ *
+ * @section compile_section Compiling and Usage
+ *
+ * @par Compiling Instructions: 
+ *      Build and run
+ * 
+ * @par Build:
+   @verbatim
+   > g++ -o dsh dsh.cpp -Wall -g -std=c++11
+   @endverbatim
+ * 
+ * @par Make:
+   @vertbatim
+   > make
+   @endverbatim
+ * 
+ * @par Usage: 
+   @verbatim  
+   > ./dsh
+   @endverbatim 
+ *
+ * @section todo_bugs_modification_section Todo, Bugs, and Modifications
+ * 
+ * @bugs	calling any non-custom command will cause a second dsh> to appear
+ *      on the first line but, none to appear on the next. Thus leaving
+ *      cursor without a prompt. (still functional)
+ *
+ * @bugs    signal doesn't seem to be working - seems to not have permission in
+ *  ubuntu - will test in fedora.
+ * 
+ * @par Modifications and Development Timeline: 
+   @verbatim 
+   Date          Modification 
+   ------------  -------------------------------------------------------------- 
+   09-03-2016	read program document - fought with c++ compilers
+   02-05-2016   attempt loop structure - failed horribly
+   02-09-2016   loop works with if/else instead of switch
+   02-10-2016   wasted day attempting to find usable system calls
+   02-11-2016   learned needed system calls and proc folders - program grew
+                quickly. Also used sample code for fork-exec
+   02-12-2016   Wrote up all documentation - did many final test and found 
+                many bugs - also going to test in fedora
+   @endverbatim
+ *
+ *****************************************************************************/
+
+
+
+//input
 #include <iostream>
+//string functions
 #include <string>
 #include <string.h>
+
+//for system function commands
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+//to open files
 #include <fstream>
+
+//for kill command
 #include <signal.h>
 
 //For Parsing the bloody entry because C++ doesn't seem to have a built in 
@@ -15,20 +106,30 @@
 
 using namespace std;
 
-bool cmdnm( string pid );
-
+//function taken from sample code
 int spawn(char* program, char** arg_list);
 
-void systat();
-
-bool displayProcFile(string filename);
-bool displayProcFileMeminfo();
-bool displayProcFileCPUInfo();
-
+// primary functions for loop
+bool cmdnm( string pid );
 void help();
 void cwd();
 void signal(int signaNum, pid_t pid);
 
+void systat();
+//systat helper functions
+bool displayProcFile(string filename);
+bool displayProcFileMeminfo();
+bool displayProcFileCPUInfo();
+
+
+
+
+/***************************************************************************//**
+ * @author Johnny Ackerman
+ * 
+ * @par Description: Runs an infinant loop for a shell process
+ *
+*******************************************************************************/
 int main()
 {
 	//For parsing the shell arguments
@@ -127,6 +228,16 @@ int main()
     }
 }
 
+/***************************************************************************//**
+ * @author Johnny Ackerman
+ * 
+ * @par Description: Displays the command that started a program
+ *
+ * @param[in]   string pid  -   the process id of the program in question
+ *
+ * @returns True - function was succesful
+ * @returns False - function failed to open file
+*******************************************************************************/
 bool cmdnm( string pid )
 {
 // USER PID	%CPU	%MEM	VSZ	RSS	TTY	STAT	Start	Time	COMMAND
@@ -155,6 +266,9 @@ bool cmdnm( string pid )
    ARG_LIST is a NULL-terminated list of character strings to be
    passed as the program's argument list.  Returns the process id of
    the spawned process.  */
+/* - Note spawn was taken from under the Gnu Public License.  Thus this 
+code is now under the GNU Public License as well.  You can find out more information about Gnu codes and the
+GPL at   http://www.gnu.org/ . */
 int spawn (char* program, char** arg_list)
 {
   pid_t child_pid;
@@ -178,15 +292,17 @@ int spawn (char* program, char** arg_list)
   }
 }
 
-
-//systat
-/*
-version: /proc/version
-uptime: /proc/uptime
-memtotal : /proc/meminfo first line
-memfree: /proc/meminfo second line
-cpuinfo: /proc/cpuinfo lines 2-9
-*/
+/***************************************************************************//**
+ * @author Johnny Ackerman
+ * 
+ * @par Description: Displays system information
+ * version: /proc/version
+ * uptime: /proc/uptime
+ * memtotal : /proc/meminfo first line
+ * memfree: /proc/meminfo second line
+ * cpuinfo: /proc/cpuinfo lines 2-9
+ *
+*******************************************************************************/
 void systat()
 {	
 	displayProcFile( "version");
@@ -195,6 +311,16 @@ void systat()
 	displayProcFileCPUInfo();	
 }
 
+/***************************************************************************//**
+ * @author Johnny Ackerman
+ * 
+ * @par Description: Displays the first line of a given file
+ *
+ * @param[in]   string filename  -   file being opened
+ *
+ * @returns True - function was succesful
+ * @returns False - function failed to open file
+*******************************************************************************/
 bool displayProcFile( string filename) 
 {
 	ifstream fin;
@@ -211,6 +337,14 @@ bool displayProcFile( string filename)
 	return true;
 }
 
+/***************************************************************************//**
+ * @author Johnny Ackerman
+ * 
+ * @par Description: Displays first 2 lines of meminfo file
+ *
+ * @returns True - function was succesful
+ * @returns False - function failed to open file
+*******************************************************************************/
 bool displayProcFileMeminfo()
 {
 	ifstream fin;
@@ -230,6 +364,14 @@ bool displayProcFileMeminfo()
 	return true;
 }
 
+/***************************************************************************//**
+ * @author Johnny Ackerman
+ * 
+ * @par Description: Displays lines 2-8 of File CPUInfo
+ *
+ * @returns True - function was succesful
+ * @returns False - function failed to open file
+*******************************************************************************/
 bool displayProcFileCPUInfo()
 {
 	ifstream fin;
@@ -252,6 +394,11 @@ bool displayProcFileCPUInfo()
 	return true;
 }
 
+/***************************************************************************//**
+ * @author Johnny Ackerman
+ * 
+ * @par Description: Displays help information about custom shell commands
+*******************************************************************************/
 void help()
 {
     cout << "Usage: cmdnm <pid>" << endl;
@@ -281,6 +428,11 @@ void help()
     << "directory (the path from /)" << endl;   
 }
 
+/***************************************************************************//**
+ * @author Johnny Ackerman
+ * 
+ * @par Description: Displays the Current Working Directory
+*******************************************************************************/
 void cwd()
 {
     char *nonConstantString = get_current_dir_name();
@@ -290,7 +442,16 @@ void cwd()
         << endl;
     free( nonConstantString );
 }
-               
+       
+/***************************************************************************//**
+ * @author Johnny Ackerman
+ * 
+ * @par Description: Sends a Signal to a process
+ *
+ * @param[in]   string pid  -   the process id of the program in question
+ * @param[in]   signalNum   -   The signal to be sent
+ *
+*******************************************************************************/
 void signal(int signalNum, pid_t pid)
 {
     int testValue = 99;
