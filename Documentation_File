@@ -4,6 +4,7 @@ Description
     This is a process idetification program and simple shell. This program will introduce unix environment, system calls, signals, the proc filesystem and the fork / exec system calls.   It will be a command line program with executable name: dsh.    It should present a prompt with a prompt string:  dsh> and accept commands to be executed at the prompt.
     
 - THIS WILL ONLY RUN ON LINUX -
+- SIGNAL WILL ONLY WORK IF YOU HAVE PERMISION TO USE KILL -
 
 Algorithms and libraries used:
     As for Algorithms, nothing significant was used.

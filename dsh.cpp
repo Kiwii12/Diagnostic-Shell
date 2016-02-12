@@ -62,6 +62,7 @@
  *
  * @bugs    signal doesn't seem to be working - seems to not have permission in
  *  ubuntu - will test in fedora.
+ *  Signal will work if the user has permision to use the kill command
  * 
  * @par Modifications and Development Timeline: 
    @verbatim 
@@ -138,9 +139,12 @@ int main()
 	string entry1;
 	string entry2;
 
+	cout << "dsh > ";
+
+    //start of "switch" statement
     while(true)
     {
-    cout << "dsh > ";
+    //cout << "dsh > ";
 	// Grab cin inside the infinant loop in the off chance the user wants
 	// to maybe use a second command
 	getline(cin, entry1);
@@ -224,7 +228,8 @@ int main()
         strcpy(nonConstantString, (entry1.c_str()));
         spawn( nonConstantString, arg_list );
     }
-	entry.clear();
+    entry.clear();
+    cout << "dsh > ";
     }
 }
 
@@ -240,18 +245,21 @@ int main()
 *******************************************************************************/
 bool cmdnm( string pid )
 {
-// USER PID	%CPU	%MEM	VSZ	RSS	TTY	STAT	Start	Time	COMMAND
 	string command;
 	ifstream fin;
 
+	//Opens file
 	fin.open( "/proc/" + pid + "/comm" );
 	if (fin.fail())
 	{
 		cerr << "Could not open cmdline file" << endl;
 		return false;
 	}
+	//dumps all file information to screen
 	while( getline( fin, command ) )
-	cout << "Command String" << command << endl;
+	{
+		cout << "Command: " << command << endl;
+	}
 	return true;
 }
 
@@ -325,14 +333,18 @@ bool displayProcFile( string filename)
 {
 	ifstream fin;
 	string data;
+
+	//opens file
 	fin.open("/proc/" + filename);
 	if (fin.fail())
 	{
 		cerr << "Could not open " << filename << " file" << endl;
 		return false;
 	}
+	//gets entirety of the first line but only first line
 	getline(fin, data);
-	cout << filename << ": " << data << endl;
+	//dumps data to screen
+	cout <<  data << endl;
 	fin.close();
 	return true;
 }
@@ -350,12 +362,14 @@ bool displayProcFileMeminfo()
 	ifstream fin;
 	string data;
 	string filename = "meminfo";
+	//opens meminfo in proc folder
 	fin.open("/proc/" + filename);
 	if (fin.fail())
 	{
 		cerr << "Could not open " << filename << " file" << endl;
 		return false;
 	}
+	//dumps first 2 lines to screen
 	getline(fin, data);
 	cout << "MemTotal: " << data << endl;
 	getline(fin, data);
@@ -377,6 +391,7 @@ bool displayProcFileCPUInfo()
 	ifstream fin;
 	string data;
 	string filename = "cpuinfo";
+	//opens cpuinfo from proc folder
 	fin.open("/proc/" + filename);
 	if (fin.fail())
 	{
@@ -385,6 +400,7 @@ bool displayProcFileCPUInfo()
 	}
 	//skip first line
 	getline(fin, data);
+	//dumps lines 2-9 to screen
 	for (int i = 1; i < 9; i++)
 	{
 		getline(fin, data);
@@ -435,18 +451,20 @@ void help()
 *******************************************************************************/
 void cwd()
 {
+    //The command get_current_dir_name uses dynamic memory
     char *nonConstantString = get_current_dir_name();
-    //strcpy(nonConstantString, (entry1.c_str()));
-    //nonConstantString = 
     cout << "Current Directory: " << string(nonConstantString) 
         << endl;
+    //Free's dynamic memory
     free( nonConstantString );
 }
        
 /***************************************************************************//**
  * @author Johnny Ackerman
  * 
- * @par Description: Sends a Signal to a process
+ * @par Description: Sends a Signal to a process. This function will only work
+ * if the user has permisions to use the kill command!!!
+ * 
  *
  * @param[in]   string pid  -   the process id of the program in question
  * @param[in]   signalNum   -   The signal to be sent
@@ -454,12 +472,12 @@ void cwd()
 *******************************************************************************/
 void signal(int signalNum, pid_t pid)
 {
-    int testValue = 99;
+
     //kill returns 0 on success
-    testValue = kill( pid, 0 );
-    cout << "testValue = " << testValue << endl;
+    //Tests if pid is valid
     if( kill( pid, 0 ) == 0 )
     {
+	//Tests if signalNum is valid
         if(kill( pid, signalNum) != 0)
         {
             cout << "Invalid Signal" << endl;
@@ -471,8 +489,4 @@ void signal(int signalNum, pid_t pid)
         cout << "Invalid pid number, perhaps reversed? " 
         << endl;
     }
-    testValue = kill( pid, signalNum );
-    cout << "testValue = " << testValue << endl;
-//    cout << "entry(2) = " << pid <<
-//        " - entry(1) = " << signalNum << endl;
 }
