@@ -46,11 +46,19 @@ List of functions:
     displayProcFileCPUInfo - displays lines 2 - 9 of cpuinfo file
     
 - Note Many of these are not direct commands in the program
-- Note spawn was taken from under the Gnu Public License.  Thus this code is now as well.  You can find out more information about Gnu codes and the GPL at   http://www.gnu.org/ .
+- Note spawn was taken from under the Gnu Public License.  Thus this code 
+is now as well.  You can find out more information about Gnu codes and the 
+GPL at   http://www.gnu.org/ .
 
 Compiling the program:
     There is a make file provide. Using the make command will compile the
 program. Also the command: "g++ -o dsh dsh.cpp -Wall -g -std=c++11" will as well
+
+Testing and Verification:
+    The code was tested by manually runing the program. all of the custom
+    commands wer run as well as many common commands such as ls. Even the shell
+    was run itside of itself.
+    Bug - for none custom commands, "dsh > " will not be displayed after.
 
 Submitted Files:
     prog1.pdf, dsh.cpp, Makefile
