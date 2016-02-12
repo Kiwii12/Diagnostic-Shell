@@ -18,9 +18,11 @@ bool cmdnm( string pid );
 
 int spawn(char* program, char** arg_list);
 
-bool systat();
+void systat();
 
-char **d2array (int rows);
+bool displayProcFile(string filename);
+bool displayProcFileMeminfo();
+bool displayProcFileCPUInfo();
 
 int main()
 {
@@ -122,16 +124,16 @@ int main()
 	}
         else
         {
-            char* nonConstantString;
+			char nonConstantString[300];
             char* arg_list[300];
-            for( int i = 0; i < (entry.size() - 1); i++ )
+            for( int i = 0; i < (entry.size() ); i++ )
             {
-                strcpy(nonConstantString, (entry.at(i)).c_str());
+                strcpy_s(nonConstantString, 300, (entry.at(i)).c_str());
                 arg_list[i] = nonConstantString;
             }
             arg_list[entry.size()] = nullptr;
             //cout << "Invalid Command" << endl;
-            strcpy(nonConstantString, (entry1.c_str()));
+            strcpy_s(nonConstantString, (entry1.c_str()));
             spawn( nonConstantString, arg_list );
         }
 
@@ -146,7 +148,7 @@ bool cmdnm( string pid )
 	string command;
 	ifstream fin;
 
-	fin.open( "/proc/" + pid + "/cmdline" );
+	fin.open( "/proc/" + pid + "/comm" );
 	if (fin.fail())
 	{
 		cerr << "Could not open cmdline file" << endl;
@@ -171,20 +173,20 @@ bool cmdnm( string pid )
    the spawned process.  */
 int spawn (char* program, char** arg_list)
 {
-  //pid_t child_pid;
+  pid_t child_pid;
 
   /* Duplicate this process.  */
-  //child_pid = fork ();
-/*  if (child_pid != 0)
+  child_pid = fork ();
+  if (child_pid != 0)
     /* This is the parent process.  */
-/*    return child_pid;
+    return child_pid;
   else {
     /* Now execute PROGRAM, searching for it in the path.  */
-    //execvp (program, arg_list);
+    execvp (program, arg_list);
     /* The execvp function returns only if an error occurs.  */
     cerr << "an error occurred in execvp" << endl;
     abort ();
-//  }
+  }
 }
 
 
@@ -196,38 +198,67 @@ memtotal : /proc/meminfo first line
 memfree: /proc/meminfo second line
 cpuinfo: /proc/cpuinfo lines 2-9
 */
-bool systat()
+void systat()
+{	
+	displayProcFile( "version");
+	displayProcFile("uptime");
+	displayProcFileMeminfo();
+	displayProcFileCPUInfo();	
+}
+
+bool displayProcFile( string filename) 
 {
 	ifstream fin;
 	string data;
-	fin.open("/proc/version");
+	fin.open("/proc/" + filename);
 	if (fin.fail())
 	{
-		cerr << "Could not open version file" << endl;
+		cerr << "Could not open " << filename << " file" << endl;
 		return false;
 	}
 	getline(fin, data);
-	cout << "Version: " << data << endl;
-
-	fin.open("/proc/uptime");
-	if (fin.fail())
-	{
-		cerr << "Could not open uptime file" << endl;
-		return false;
-	}
-	getline(fin, data);
-	cout << "uptime: " << data << endl;
-
-	fin.open("/proc/meminfo");
-	if (fin.fail())
-	{
-		cerr << "Could not open meminfo file" << endl;
-		return false;
-	}
-	getline(fin, data);
-	cout << "meminfo: " << data << endl;
-
-	
+	cout << filename << ": " << data << endl;
+	fin.close();
+	return true;
 }
 
-openProcFile(ifstream fin,)
+bool displayProcFileMeminfo()
+{
+	ifstream fin;
+	string data;
+	string filename = "meminfo";
+	fin.open("/proc/" + filename);
+	if (fin.fail())
+	{
+		cerr << "Could not open " << filename << " file" << endl;
+		return false;
+	}
+	getline(fin, data);
+	cout << "MemTotal: " << data << endl;
+	getline(fin, data);
+	cout << "MemFree: " << data << endl;
+	fin.close();
+	return true;
+}
+
+bool displayProcFileCPUInfo()
+{
+	ifstream fin;
+	string data;
+	string filename = "cpuinfo";
+	fin.open("/proc/" + filename);
+	if (fin.fail())
+	{
+		cerr << "Could not open " << filename << " file" << endl;
+		return false;
+	}
+	//skip first line
+	getline(fin, data);
+	for (int i = 1; i < 9; i++)
+	{
+		getline(fin, data);
+		cout << data << endl;
+	}
+	fin.close();
+	return true;
+}
