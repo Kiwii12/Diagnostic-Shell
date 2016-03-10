@@ -103,12 +103,17 @@
 //for time control
 #include <chrono>
 #include <thread>
+
 #include <sys/time.h>
+#include <ctime>
 
 //For Parsing the bloody entry because C++ doesn't seem to have a built in 
 //function for such a task
 #include <vector>
 #include <sstream>
+
+//pthreads - for multithreading
+#include <pthread.h>
 
 using namespace std;
 
@@ -148,6 +153,8 @@ int main()
 	string entry1;
 	string entry2;
 
+	pthread_t = thread1;
+
 	cout << "dsh > ";
 
     //start of "switch" statement
@@ -176,7 +183,10 @@ int main()
         {
             cout << "Usage: cmdnm <pid>" << endl;
         }
-        else cmdnm(entry2);
+        else if( pthread_create(thread1, NULL, cmdnm(entry2), (void *)0)) 
+        {
+        	cout << "Unable to create thread " << endl;
+        } //cmdnm(entry2)
     }
     else if( entry1 == "systat" )
     {
@@ -184,7 +194,10 @@ int main()
         {
             cout << "Usage: systat" << endl;
         }
-        else systat();
+        else if( pthread_create(thread1, NULL, systat(), (void *)0)) 
+        {
+        	cout << "Unable to create thread " << endl;
+        }//systat();
     }
     else if( entry1 == "exit" )
     {
@@ -512,10 +525,18 @@ void heartbeat(int tinc, int tend, string tval)
 {
 	int totalIncrement = 0;
 	struct timeval *tv;
+
+	//chrono::system_clock::time_point timePoint;
+	//auto timePoint;
+
 	while (totalIncrement < tend)
 	{
 		//gettimeofday(tv, NULL);
 		cout << "test " << endl;
+		//auto timePoint = chrono::system_clock::now();
+		//auto timePoint = chrono::system_clock::time_point<chrono::system_clock, chrono::microseconds>;
+		//cout << std::put_time(localtime(chrono::system_clock::now()), "%F %T") << endl;
+		//cout << timePoint << endl;
 
 		//increase time
 		std::this_thread::sleep_until(chrono::system_clock::now() + chrono::seconds(tinc));
