@@ -371,9 +371,9 @@ bool displayProcFileMeminfo()
 	}
 	//dumps first 2 lines to screen
 	getline(fin, data);
-	cout << "MemTotal: " << data << endl;
+	cout << data << endl;
 	getline(fin, data);
-	cout << "MemFree: " << data << endl;
+	cout << data << endl;
 	fin.close();
 	return true;
 }
