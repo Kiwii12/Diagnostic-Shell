@@ -153,7 +153,8 @@ int main()
 	string entry1;
 	string entry2;
 
-	pthread_t = thread1;
+	pthread_t newThreads[5];
+	int i = 0;
 
 	cout << "dsh > ";
 
@@ -183,10 +184,11 @@ int main()
         {
             cout << "Usage: cmdnm <pid>" << endl;
         }
-        else if( pthread_create(thread1, NULL, cmdnm(entry2), (void *)0)) 
+        else if( pthread_create(newThreads[i%5], NULL, cmdnm, (void *)entry2)) 
         {
         	cout << "Unable to create thread " << endl;
         } //cmdnm(entry2)
+        else i++;
     }
     else if( entry1 == "systat" )
     {
@@ -194,10 +196,11 @@ int main()
         {
             cout << "Usage: systat" << endl;
         }
-        else if( pthread_create(thread1, NULL, systat(), (void *)0)) 
+        else if( pthread_create(newThreads[i%5], NULL, systat, (void *)i)) 
         {
         	cout << "Unable to create thread " << endl;
         }//systat();
+        else i++;
     }
     else if( entry1 == "exit" )
     {
