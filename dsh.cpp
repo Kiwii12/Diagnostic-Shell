@@ -100,12 +100,20 @@
 //for kill command
 #include <signal.h>
 
+//for time control
+#include <chrono>
+#include <thread>
+#include <sys/time.h>
+
 //For Parsing the bloody entry because C++ doesn't seem to have a built in 
 //function for such a task
 #include <vector>
 #include <sstream>
 
 using namespace std;
+
+//defines the system clock for current time
+//using std::chrono::system_clock;
 
 //function taken from sample code
 int spawn(char* program, char** arg_list);
@@ -115,6 +123,7 @@ bool cmdnm( string pid );
 void help();
 void cwd();
 void signal(int signaNum, pid_t pid);
+void heartbeat(int tinc, int tend, string tval);
 
 void systat();
 //systat helper functions
@@ -210,7 +219,15 @@ int main()
         }
         else signal( stoi(entry.at(1)), stoi(entry.at(2) ));
     }
-	else if (entry1 == "helpThis")
+    else if(entry1 == "hb")
+    {
+    	if ( entry.size() != 4)
+    	{
+    		cout << "Usage: hb <increment> <end time> <time unit>" << endl;
+    	}
+    	else heartbeat(stoi(entry.at(1)), stoi(entry.at(2)), entry.at(3));
+    }
+	else if (entry1 == "help")
 	{
         help();
 	}
@@ -489,4 +506,19 @@ void signal(int signalNum, pid_t pid)
         cout << "Invalid pid number, perhaps reversed? " 
         << endl;
     }
+}
+
+void heartbeat(int tinc, int tend, string tval)
+{
+	int totalIncrement = 0;
+	struct timeval *tv;
+	while (totalIncrement < tend)
+	{
+		//gettimeofday(tv, NULL);
+		cout << "test " << endl;
+
+		//increase time
+		std::this_thread::sleep_until(chrono::system_clock::now() + chrono::seconds(tinc));
+		totalIncrement += tinc;
+	}
 }
