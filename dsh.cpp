@@ -88,6 +88,8 @@
 #include <string>
 #include <string.h>
 
+#include <algorithm>
+
 //for system function commands
 #include <stdio.h>
 #include <stdlib.h>
@@ -115,6 +117,8 @@
 //pthreads - for multithreading
 #include <pthread.h>
 
+
+
 using namespace std;
 
 //defines the system clock for current time
@@ -124,13 +128,13 @@ using namespace std;
 int spawn(char* program, char** arg_list);
 
 // primary functions for loop
-bool cmdnm( string pid );
+void* cmdnm( void* pid );
 void help();
 void cwd();
 void signal(int signaNum, pid_t pid);
 void heartbeat(int tinc, int tend, string tval);
 
-void systat();
+void* systat(void* doesNothing);
 //systat helper functions
 bool displayProcFile(string filename);
 bool displayProcFileMeminfo();
@@ -155,115 +159,165 @@ int main()
 
 	pthread_t newThreads[5];
 	int i = 0;
+	void* status;
 
 	cout << "dsh > ";
 
     //start of "switch" statement
     while(true)
     {
-    //cout << "dsh > ";
-	// Grab cin inside the infinant loop in the off chance the user wants
-	// to maybe use a second command
-	getline(cin, entry1);
+	    //cout << "dsh > ";
+		// Grab cin inside the infinant loop in the off chance the user wants
+		// to maybe use a second command
+		getline(cin, entry1);
 
-	// Uses the istringstream to tokinize
-	istringstream myStringStream(entry1);
-	while (getline(myStringStream, entry2, ' '))
-	{
-		entry.push_back(entry2);
-	}
-	if (!entry.empty())
-	{
-		entry1 = entry.at(0);
-	}
+		// Uses the istringstream to tokinize
+		istringstream myStringStream(entry1);
+		while (getline(myStringStream, entry2, ' ') )
+		{
+			if (!entry2.empty())
+			{
+				entry.push_back(entry2);
+			}
+		}
 
-    if( entry1 == "\n"){ }
-    else if( entry1 == "cmdnm" )
-    {
-        if( entry.size() != 2 )
-        {
-            cout << "Usage: cmdnm <pid>" << endl;
-        }
-        else if( pthread_create(newThreads[i%5], NULL, cmdnm, (void *)entry2)) 
-        {
-        	cout << "Unable to create thread " << endl;
-        } //cmdnm(entry2)
-        else i++;
-    }
-    else if( entry1 == "systat" )
-    {
-        if( entry.size() > 1)
-        {
-            cout << "Usage: systat" << endl;
-        }
-        else if( pthread_create(newThreads[i%5], NULL, systat, (void *)i)) 
-        {
-        	cout << "Unable to create thread " << endl;
-        }//systat();
-        else i++;
-    }
-    else if( entry1 == "exit" )
-    {
-        exit(0);
-    }
-    else if( entry1 == "cd" )
-    {
-        if( entry.size() != 2 ) 
-        {
-            cout << "Usage: cd" << endl;
-            cout << "       cd <absolut path>" << endl;
-            cout << "       cd <relative path>" << endl;
-        }
-        else
-        {
-            chdir(entry2.c_str());
-        }
-    }
-    else if( entry1 == "pwd" )
-    {
-        if( entry.size() > 1 )
-        {
-        cout << "Usage: pwd" << endl;
-        }
-        else cwd();
-    }
-    else if( entry1 == "signal" )
-    {
-        if ( entry.size() != 3 )
-        {
-            cout << "Usage: signal <signal_num> <pid>" << endl;
-        }
-        else signal( stoi(entry.at(1)), stoi(entry.at(2) ));
-    }
-    else if(entry1 == "hb")
-    {
-    	if ( entry.size() != 4)
-    	{
-    		cout << "Usage: hb <increment> <end time> <time unit>" << endl;
-    	}
-    	else heartbeat(stoi(entry.at(1)), stoi(entry.at(2)), entry.at(3));
-    }
-	else if (entry1 == "help")
-	{
-        help();
+
+		while (!entry.empty())
+		{
+
+
+			entry1 = entry.at(0);
+
+			if( entry1.empty())
+			{
+				//cout << "Entry1 is empty";
+				entry.erase(entry.begin());
+			}
+		    else if( entry1 == "\n")
+		    { 
+		    		entry.erase(entry.begin()); 
+		    }
+		    else if( entry1 == "cmdnm" )
+		    {
+		        if( entry.size() < 2 )
+		        {
+		            cout << "Usage: cmdnm <pid>" << endl;
+		            entry.erase(entry.begin()); 
+		        }
+		        else
+		        {
+		        	char currentPid[] = "nothing yet";
+		        	strcpy (currentPid, entry.at(1).c_str());
+		        	int didItWork = pthread_create(&newThreads[i%5], NULL, cmdnm, (void *)currentPid);
+
+		        	if( didItWork )
+		        		cout << "Unable to create thread " << endl;
+		        	i++;
+
+		        	//two args used
+		        	entry.erase(entry.begin()); entry.erase(entry.begin()); 
+		        } //cmdnm(entry2)
+		    }
+		    else if( entry1 == "systat" )
+		    {
+		        if( pthread_create(&newThreads[i%5], NULL, systat, NULL)) 
+		        {
+		        	cout << "Unable to create thread " << endl;
+		        }//systat();
+		        else i++;
+
+		        entry.erase(entry.begin()); 
+		    }
+		    else if( entry1 == "exit" )
+		    {
+		        exit(0);
+		    }
+		    else if( entry1 == "cd" )
+		    {
+		        if( entry.size() < 2 ) 
+		        {
+		            cout << "Usage: cd" << endl;
+		            cout << "       cd <absolut path>" << endl;
+		            cout << "       cd <relative path>" << endl;
+
+		            //two args used
+		        	entry.erase(entry.begin()); 
+		        }
+		        else
+		        {
+		            chdir(entry.at(1).c_str());
+
+		            //two args used
+		        	entry.erase(entry.begin()); entry.erase(entry.begin()); 
+		        }
+		    }
+		    else if( entry1 == "pwd" )
+		    {
+		        cwd();
+		        entry.erase(entry.begin()); 
+		    }
+		    else if( entry1 == "signal" )
+		    {
+		        if ( entry.size() < 3 )
+		        {
+		            cout << "Usage: signal <signal_num> <pid>" << endl;
+		            entry.erase(entry.begin());
+		        }
+		        else 
+		        {
+		        	signal( stoi(entry.at(1)), stoi(entry.at(2) ));
+
+		        	//three args
+		        	entry.erase(entry.begin()); entry.erase(entry.begin()); 
+		        	entry.erase(entry.begin()); 
+		        }
+		    }
+		    else if(entry1 == "hb")
+		    {
+		    	if ( entry.size() < 4)
+		    	{
+		    		cout << "Usage: hb <increment> <end time> <time unit>" << endl;
+		    		entry.erase(entry.begin());
+		    	}
+		    	else 
+		    	{
+		    		heartbeat(stoi(entry.at(1)), stoi(entry.at(2)), entry.at(3));
+		    		//four args
+		        	entry.erase(entry.begin()); entry.erase(entry.begin());
+		        	entry.erase(entry.begin()); entry.erase(entry.begin());
+		    	}
+		    }
+			else if (entry1 == "help")
+			{
+		        help();
+		        entry.erase(entry.begin());
+			}
+		    else //Fork Exec
+		    {
+		        char nonConstantString[300];
+		        char* arg_list[300];
+		        for( int i = 0; i < int(entry.size() ); i++ )
+		        {
+		            strcpy(nonConstantString, (entry.at(i)).c_str());
+		            arg_list[i] = nonConstantString;
+		        }
+		        arg_list[entry.size()] = nullptr;
+		        //cout << "Invalid Command" << endl;
+		        strcpy(nonConstantString, (entry1.c_str()));
+		        spawn( nonConstantString, arg_list );
+
+		        entry.clear();
+		    }
+		    
+
+		    for(int j = 0; j < 5; j++)
+		    {
+		    	pthread_join(newThreads[j], &status);
+		    }
+
+		}
+	    cout << "dsh > ";
 	}
-    else //Fork Exec
-    {
-        char nonConstantString[300];
-        char* arg_list[300];
-        for( int i = 0; i < int(entry.size() ); i++ )
-        {
-            strcpy(nonConstantString, (entry.at(i)).c_str());
-            arg_list[i] = nonConstantString;
-        }
-        arg_list[entry.size()] = nullptr;
-        //cout << "Invalid Command" << endl;
-        strcpy(nonConstantString, (entry1.c_str()));
-        spawn( nonConstantString, arg_list );
-    }
-    entry.clear();
-    cout << "dsh > ";
-    }
 }
 
 /***************************************************************************//**
@@ -276,24 +330,26 @@ int main()
  * @returns True - function was succesful
  * @returns False - function failed to open file
 *******************************************************************************/
-bool cmdnm( string pid )
+void *cmdnm( void *pid )
 {
 	string command;
 	ifstream fin;
 
+	string currentPid((char*) pid);
+
 	//Opens file
-	fin.open( "/proc/" + pid + "/comm" );
+	fin.open( "/proc/" + currentPid + "/comm" );
 	if (fin.fail())
 	{
 		cerr << "Could not open cmdline file" << endl;
-		return false;
+		pthread_exit(NULL);
 	}
 	//dumps all file information to screen
 	while( getline( fin, command ) )
 	{
 		cout << "Command: " << command << endl;
 	}
-	return true;
+	pthread_exit(NULL);
 }
 
 
@@ -344,12 +400,13 @@ int spawn (char* program, char** arg_list)
  * cpuinfo: /proc/cpuinfo lines 2-9
  *
 *******************************************************************************/
-void systat()
+void *systat(void *doesNothing)
 {	
 	displayProcFile( "version");
 	displayProcFile("uptime");
 	displayProcFileMeminfo();
 	displayProcFileCPUInfo();	
+	pthread_exit(NULL);
 }
 
 /***************************************************************************//**
