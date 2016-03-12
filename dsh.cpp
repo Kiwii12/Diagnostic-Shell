@@ -303,10 +303,17 @@ int main()
 		        //cout << "Invalid Command" << endl;
 		        strcpy(nonConstantString, (entry1.c_str()));
 
+		        int *status = 0;
 		        if(position > 0)
-		        	spawnRedirect( nonConstantString, arg_list,filename,in );
+		        {
+		        	pid_t childId = spawnRedirect( nonConstantString, arg_list,filename,in );
+		        	waitpid(childId, status, 0);
+		        }
 		        else
-		        	spawn( nonConstantString, arg_list );
+		        {
+		        	pid_t childId = spawn( nonConstantString, arg_list );
+		        	waitpid(childId, status, 0);
+		        }
 
 		        entry.clear();
 		    }
@@ -338,6 +345,7 @@ code is now under the GNU Public License as well.  You can find out more informa
 GPL at   http://www.gnu.org/ . */
 int spawn (char* program, char** arg_list)
 {
+	// int* status = 0;
   pid_t child_pid;
 
   cout << "Entered spawn" << endl;
@@ -348,7 +356,8 @@ int spawn (char* program, char** arg_list)
   {
     /* This is the parent process.  */
     //sleep(0);
-    wait();
+    // wait(status);
+    // sleep(0);
     //cout << "dsh > ";
     return child_pid;
   }
@@ -378,7 +387,8 @@ int spawnRedirect (char* program, char** arg_list, string filename, bool in)
   if (child_pid != 0)
   {
     /* This is the parent process.  */
-      wait();
+      // wait();
+      // sleep(0);
     //cout << "dsh > ";
     return child_pid;
   }

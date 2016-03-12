@@ -10,6 +10,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+//for wait commands
+#include <sys/wait.h>
+
 //to open files
 #include <fstream>
 
