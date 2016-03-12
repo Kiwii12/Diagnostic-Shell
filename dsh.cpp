@@ -283,7 +283,9 @@ int main()
 		    	string filename;
 		    	position = checkForRedirect(entry, in );
 		    	cout << "Right after redirect " << in << endl;
-		    	if (position != 0)
+
+		    	cout << "position = " << position << endl;
+		    	if (position > 0)
 		    	{
 		    		filename = entry.at(position+1);
 		    		entry.erase(entry.begin() + (position+1));
@@ -301,7 +303,7 @@ int main()
 		        //cout << "Invalid Command" << endl;
 		        strcpy(nonConstantString, (entry1.c_str()));
 
-		        if(position != 0)
+		        if(position > 0)
 		        	spawnRedirect( nonConstantString, arg_list,filename,in );
 		        else
 		        	spawn( nonConstantString, arg_list );
@@ -338,12 +340,15 @@ int spawn (char* program, char** arg_list)
 {
   pid_t child_pid;
 
+  cout << "Entered spawn" << endl;
+
   /* Duplicate this process.  */
   child_pid = fork();
   if (child_pid != 0)
   {
     /* This is the parent process.  */
-      wait();
+    //sleep(0);
+    wait();
     //cout << "dsh > ";
     return child_pid;
   }
@@ -404,23 +409,27 @@ int spawnRedirect (char* program, char** arg_list, string filename, bool in)
 int checkForRedirect(vector<string> entry, bool &in)
 {
 	vector<string>::iterator findThis;
-	findThis = find(entry.begin(), (entry.end() -2), ">");
+	findThis = find(entry.begin(), (entry.end() -1), ">");
 	in = false;
+
+	//cout << "in check redirect, findthis = " << findThis << endl;
 
 	int position = 0;
 
-	if(findThis != entry.end())
+	position = distance(entry.begin(), findThis);
+	if(findThis != entry.end() -1)
 	{
-		position = distance(entry.begin(), findThis);
 		return position;
 	}
 
-	findThis = find(entry.begin(), (entry.end() -2), "<");
+	findThis = find(entry.begin(), (entry.end() -1), "<");
 	in = true;
 
 	position = 0;
 
-	if(findThis != entry.end())
+	//cout << "in check redirect, findthis = " << findThis << endl;
+
+	if(findThis != entry.end() -1)
 	{
 		position = distance(entry.begin(), findThis);
 		return position;
