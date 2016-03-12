@@ -76,10 +76,13 @@
                 quickly. Also used sample code for fork-exec
    02-12-2016   Wrote up all documentation - did many final test and found 
                 many bugs - also going to test in fedora
-   03-10-2016	attempted to get hb working
-   03-11-2016	refactered program to handle multiple commands at the same time
+   03-9 -2016	attempted to get hb working
+   03-10-2016	refactered program to handle multiple commands at the same time
    				got pthreads working for cmdmn and systat
    				refactered program to ignore extra spaces
+   03-11-2016	got redirection working finally. stopped tabs from breaking 
+   				the program. redirection only works for fork execute commands.
+   				Finally got dsh > to appear after exec commands
    @endverbatim
  *
  *****************************************************************************/
@@ -104,6 +107,9 @@ bool redirectOverWrite( ofstream &fout, string filename);
 bool redirectAppend( ofstream &fout, string filename);
 
 int checkForRedirect(vector<string> entry, bool &in);
+int checkForPipe(vector<string> entry, bool &pipe);
+
+void handlePipe(vector<string> entry, int position);
 
 
 
@@ -119,7 +125,11 @@ int main()
 	//For parsing the shell arguments
 	vector<string> entry;
 
-	string entry1;
+	string entry1; // the string used to check what command is done
+
+	//these two, even though named similar to entry 1, are now only used
+	//to remove spaces and tabs from entry. entry2 used to be used for
+	//secondary arguments
 	string entry2;
 	string entry3;
 
@@ -128,6 +138,11 @@ int main()
 	int i = 0;
 	void* status;
 
+
+	//if it seems weried that some variables are declared in line
+	//and that some aren't, the ones declared up here should be
+	//prevelant though the whole program, where as any declared in
+	//line should be very local and not used again elsewhere.
 
 	//redirection
 	//int option;
@@ -164,24 +179,26 @@ int main()
 		}
 
 
-		while (!entry.empty())
-		{
-
-			//cout << "at the top of is empty loop" << endl;
+		while (!entry.empty()) // this allows for multiple shell commands
+		{//muliple non-shell commands are only allowed with special cases such as
+			//redirect and piping, this is because all other commandline entries
+			//are assumed to be arguments to that command.
 
 			entry1 = entry.at(0);
 
 			if( entry1.empty())
 			{
-				//cout << "Entry1 is empty";
+				//tabs and spaces get into the entry vector as ""
 				entry.erase(entry.begin());
 			}
 		    else if( entry1 == "\n")
 		    { 
-		    		entry.erase(entry.begin()); 
+		    	//this skips newlines
+		    	entry.erase(entry.begin()); 
 		    }
 		    else if( entry1 == "cmdnm" )
 		    {
+		    	//needs at least one argument
 		        if( entry.size() < 2 )
 		        {
 		            cout << "Usage: cmdnm <pid>" << endl;
@@ -189,13 +206,20 @@ int main()
 		        }
 		        else
 		        {
+		        	//when coverted to its own pthread it needed its arg
+		        	//passed as a null pointer.
 		        	char currentPid[] = "nothing yet";
 		        	strcpy (currentPid, entry.at(1).c_str());
 		        	int didItWork = pthread_create(&newThreads[i%5], NULL, cmdnm, (void *)currentPid);
 
 		        	if( didItWork )
+		        	{
 		        		cout << "Unable to create thread " << endl;
-		        	i++;
+		        	}
+		        	else
+		        	{
+		        		i++;//counter only used to recycle threads
+		        	}
 
 		        	//two args used
 		        	entry.erase(entry.begin()); entry.erase(entry.begin()); 
@@ -203,27 +227,26 @@ int main()
 		    }
 		    else if( entry1 == "systat" )
 		    {
+		    	//even though its a pthread - it still takes no args.
 		        if( pthread_create(&newThreads[i%5], NULL, systat, NULL)) 
 		        {
 		        	cout << "Unable to create thread " << endl;
 		        }//systat();
-		        else i++;
+		        else i++; //recycle threads
 
 		        entry.erase(entry.begin()); 
 		    }
-		    else if( entry1 == "exit" )
+		    else if( entry1 == "exit" || entry1 == "quit" ) 
 		    {
 		        exit(0);
 		    }
 		    else if( entry1 == "cd" )
 		    {
-		        if( entry.size() < 2 ) 
+		        if( entry.size() < 2 ) //needs at least 1 arg
 		        {
 		            cout << "Usage: cd" << endl;
 		            cout << "       cd <absolut path>" << endl;
 		            cout << "       cd <relative path>" << endl;
-
-		            //two args used
 		        	entry.erase(entry.begin()); 
 		        }
 		        else
@@ -241,10 +264,10 @@ int main()
 		    }
 		    else if( entry1 == "signal" )
 		    {
-		        if ( entry.size() < 3 )
+		        if ( entry.size() < 3 ) //needs at least two args
 		        {
 		            cout << "Usage: signal <signal_num> <pid>" << endl;
-		            entry.erase(entry.begin());
+		            entry.erase(entry.begin()); //only deletes signal
 		        }
 		        else 
 		        {
@@ -282,38 +305,45 @@ int main()
 		    	int position;
 		    	string filename;
 		    	position = checkForRedirect(entry, in );
-		    	cout << "Right after redirect " << in << endl;
 
-		    	cout << "position = " << position << endl;
 		    	if (position > 0)
 		    	{
 		    		filename = entry.at(position+1);
 		    		entry.erase(entry.begin() + (position+1));
 		    		entry.erase(entry.begin() +(position));
 		    	}
+		    	bool pipe;
+		    	int pipePosition;
+		    	pipePosition = checkForPipe(entry, pipe);
+		    	if(pipe)
+		    	{
+		    		handlePipe(entry, pipePosition);
+		    	}
+		    	else
+		    	{
+			        char nonConstantString[300];
+			        char* arg_list[300];
+			        for( int i = 0; i < int(entry.size() ); i++ )
+			        {
+			            strcpy(nonConstantString, (entry.at(i)).c_str());
+			            arg_list[i] = nonConstantString;
+			        }
+			        arg_list[entry.size()] = nullptr;
+			        //cout << "Invalid Command" << endl;
+			        strcpy(nonConstantString, (entry1.c_str()));
 
-		        char nonConstantString[300];
-		        char* arg_list[300];
-		        for( int i = 0; i < int(entry.size() ); i++ )
-		        {
-		            strcpy(nonConstantString, (entry.at(i)).c_str());
-		            arg_list[i] = nonConstantString;
-		        }
-		        arg_list[entry.size()] = nullptr;
-		        //cout << "Invalid Command" << endl;
-		        strcpy(nonConstantString, (entry1.c_str()));
-
-		        int *status = 0;
-		        if(position > 0)
-		        {
-		        	pid_t childId = spawnRedirect( nonConstantString, arg_list,filename,in );
-		        	waitpid(childId, status, 0);
-		        }
-		        else
-		        {
-		        	pid_t childId = spawn( nonConstantString, arg_list );
-		        	waitpid(childId, status, 0);
-		        }
+			        int *status = 0;
+			        if(position > 0)
+			        {
+			        	pid_t childId = spawnRedirect( nonConstantString, arg_list,filename,in );
+			        	waitpid(childId, status, WUNTRACED);
+			        }
+			        else
+			        {
+			        	pid_t childId = spawn( nonConstantString, arg_list );
+			        	waitpid(childId, status, WUNTRACED);
+			        }
+			    }
 
 		        entry.clear();
 		    }
@@ -348,11 +378,15 @@ int spawn (char* program, char** arg_list)
 	// int* status = 0;
   pid_t child_pid;
 
-  cout << "Entered spawn" << endl;
-
   /* Duplicate this process.  */
   child_pid = fork();
-  if (child_pid != 0)
+
+  if(child_pid < 0) //error check
+  {
+  	cerr << "fork-execute failed - slow down and try again?" << endl;
+  	return child_pid;
+  }
+  else if (child_pid != 0)
   {
     /* This is the parent process.  */
     //sleep(0);
@@ -373,9 +407,6 @@ int spawn (char* program, char** arg_list)
 
 int spawnRedirect (char* program, char** arg_list, string filename, bool in)
 {
-
-	cout << "entered spawn redirect" << endl;
-
   pid_t child_pid;
   int fileDescripter;
 
@@ -384,7 +415,12 @@ int spawnRedirect (char* program, char** arg_list, string filename, bool in)
 
   /* Duplicate this process.  */
   child_pid = fork();
-  if (child_pid != 0)
+  if(child_pid < 0) //error check
+  {
+  	cerr << "fork-execute failed - slow down and try again?" << endl;
+  	return child_pid;
+  }
+  else if (child_pid != 0)
   {
     /* This is the parent process.  */
       // wait();
@@ -396,14 +432,12 @@ int spawnRedirect (char* program, char** arg_list, string filename, bool in)
   {
   	if(in)
 	{
-		cout << "in the in direction <" << endl;
 		fileDescripter = open(fileName, O_RDONLY);
 		dup2(fileDescripter, STDIN_FILENO);
 		close(fileDescripter);
 	}
 	else //out
 	{
-		cout << "int the out direction >" << endl;
 		fileDescripter = creat(fileName, 0666);
 		dup2(fileDescripter, STDOUT_FILENO);
 		close(fileDescripter);
@@ -412,6 +446,74 @@ int spawnRedirect (char* program, char** arg_list, string filename, bool in)
     execvp (program, arg_list);
     /* The execvp function returns only if an error occurs.  */
     cerr << "No Command " << string(program) << " found" << endl;
+    abort();
+  }
+}
+
+void spawnPipe (char* program1, char** arg_list1, char* program2, char** arg_list2)
+{
+	cout << "entered spawnPipe" << endl;
+
+	// int* status = 0;
+  pid_t child_pid;
+  pid_t child_pid2;
+  int fileDescripter[2]; // file descriptors
+  int * status = 0;
+
+  pipe(fileDescripter);
+
+  /* Duplicate this process.  */
+  child_pid = fork();
+
+  if(child_pid < 0) //error check
+  {
+  	cerr << "fork-execute failed - slow down and try again?" << endl;
+  	return;
+  }
+  else if (child_pid != 0)
+  {
+    /* This is the parent process.  */
+    //waitpid(childId, status, WUNTRACED);
+    //needs to spawn child # 2
+    child_pid2 = fork();
+    if(child_pid2 < 0)
+    {
+    	cerr << "fork-execute failed - slow down and try again?" << endl;
+    	return;
+    }
+    else if (child_pid2 != 0)
+    {
+    	//still parent process
+    	waitpid(child_pid2, status, WUNTRACED);
+    }
+    else
+    {
+    	//this is the second child
+    	//open read and write
+    	dup2(fileDescripter[1],1);
+
+    	//no reading - close it
+    	close(fileDescripter[0]);
+
+    	//Execute the first command here
+    	execvp(program1, arg_list1);
+    	/* The execvp function returns only if an error occurs.  */
+	    cerr << "No Command " << string(program1) << " found" << endl;
+	    abort();
+    }
+  }
+  else 
+  {
+  	//open read/write for pipe
+  	dup2(fileDescripter[0],0);
+
+  	//close writing
+  	close(fileDescripter[1]);
+
+    /* Now execute PROGRAM, searching for it in the path.  */
+    execvp (program2, arg_list2);
+    /* The execvp function returns only if an error occurs.  */
+    cerr << "No Command " << string(program2) << " found" << endl;
     abort();
   }
 }
@@ -447,4 +549,48 @@ int checkForRedirect(vector<string> entry, bool &in)
 	//postion = ">" - entry.begin();
 	//cout << "position = " << position << endl;
 	return 0;
+}
+
+int checkForPipe(vector<string> entry, bool &pipe)
+{
+	vector<string>::iterator findThis;
+	findThis = find(entry.begin(), (entry.end() -1), "|");
+	pipe = false;
+
+	//cout << "in check redirect, findthis = " << findThis << endl;
+
+	int position = 0;
+
+	position = distance(entry.begin(), findThis);
+	if(findThis != entry.end() -1)
+	{
+		pipe = true;
+		return position;
+	}
+	return 0;
+}
+
+void handlePipe(vector<string> entry, int position)
+{
+	cout << "handling pipe" << endl;
+
+
+	char nonConstantString[300];
+	char* arg_list1[300];
+	char* arg_list2[300];
+	for( int i = 0; i < position; i++ )
+	{
+	    strcpy(nonConstantString, (entry.at(i)).c_str());
+	    arg_list1[i] = nonConstantString;
+	}
+	for( int i = position+1; i < int(entry.size() ); i++ )
+	{
+	    strcpy(nonConstantString, (entry.at(i)).c_str());
+	    arg_list2[i] = nonConstantString;
+	}
+	arg_list1[entry.size()] = nullptr;
+	arg_list2[entry.size()] = nullptr;
+
+	spawnPipe( arg_list1[0], arg_list1, arg_list2[0], arg_list2 );
+	return;
 }
