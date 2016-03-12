@@ -31,7 +31,11 @@
 //pthreads - for multithreading
 #include <pthread.h>
 
+//used to find position of something in a vector
 #include <algorithm>
+
+//used to redirect
+#include <fcntl.h>
 
 
 //because who wants to see std:: all over the place

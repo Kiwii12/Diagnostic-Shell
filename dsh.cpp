@@ -93,6 +93,7 @@
 
 //function taken from sample code
 int spawn(char* program, char** arg_list);
+int spawnRedirect (char* program, char** arg_list, string filename, bool in);
 
 void* cmdnm( void* vars );
 void* systat(void* vars);
@@ -102,7 +103,7 @@ void* heartbeat( void* vars);
 bool redirectOverWrite( ofstream &fout, string filename);
 bool redirectAppend( ofstream &fout, string filename);
 
-int checkForRedirect(vector<string> entry);
+int checkForRedirect(vector<string> entry, bool &in);
 
 
 
@@ -276,7 +277,18 @@ int main()
 			}
 		    else //Fork Exec
 		    {
-		    	checkForRedirect(entry);
+		    	//in or out
+		    	bool in;
+		    	int position;
+		    	string filename;
+		    	position = checkForRedirect(entry, in );
+		    	cout << "Right after redirect " << in << endl;
+		    	if (position != 0)
+		    	{
+		    		filename = entry.at(position+1);
+		    		entry.erase(entry.begin() + (position+1));
+		    		entry.erase(entry.begin() +(position));
+		    	}
 
 		        char nonConstantString[300];
 		        char* arg_list[300];
@@ -288,7 +300,11 @@ int main()
 		        arg_list[entry.size()] = nullptr;
 		        //cout << "Invalid Command" << endl;
 		        strcpy(nonConstantString, (entry1.c_str()));
-		        spawn( nonConstantString, arg_list );
+
+		        if(position != 0)
+		        	spawnRedirect( nonConstantString, arg_list,filename,in );
+		        else
+		        	spawn( nonConstantString, arg_list );
 
 		        entry.clear();
 		    }
@@ -341,18 +357,75 @@ int spawn (char* program, char** arg_list)
   }
 }
 
-int checkForRedirect(vector<string> entry)
+int spawnRedirect (char* program, char** arg_list, string filename, bool in)
+{
+
+	cout << "entered spawn redirect" << endl;
+
+  pid_t child_pid;
+  int fileDescripter;
+
+  char fileName[] = "nothing yet";
+  strcpy (fileName, filename.c_str());
+
+  /* Duplicate this process.  */
+  child_pid = fork();
+  if (child_pid != 0)
+  {
+    /* This is the parent process.  */
+      wait();
+    //cout << "dsh > ";
+    return child_pid;
+  }
+  else 
+  {
+  	if(in)
+	{
+		cout << "in the in direction <" << endl;
+		fileDescripter = open(fileName, O_RDONLY);
+		dup2(fileDescripter, STDIN_FILENO);
+		close(fileDescripter);
+	}
+	else //out
+	{
+		cout << "int the out direction >" << endl;
+		fileDescripter = creat(fileName, 0666);
+		dup2(fileDescripter, STDOUT_FILENO);
+		close(fileDescripter);
+	}
+    /* Now execute PROGRAM, searching for it in the path.  */
+    execvp (program, arg_list);
+    /* The execvp function returns only if an error occurs.  */
+    cerr << "No Command " << string(program) << " found" << endl;
+    abort();
+  }
+}
+
+int checkForRedirect(vector<string> entry, bool &in)
 {
 	vector<string>::iterator findThis;
-	findThis = find(entry.begin(), entry.end(), ">");
+	findThis = find(entry.begin(), (entry.end() -2), ">");
+	in = false;
 
 	int position = 0;
 
 	if(findThis != entry.end())
 	{
 		position = distance(entry.begin(), findThis);
+		return position;
+	}
+
+	findThis = find(entry.begin(), (entry.end() -2), "<");
+	in = true;
+
+	position = 0;
+
+	if(findThis != entry.end())
+	{
+		position = distance(entry.begin(), findThis);
+		return position;
 	}
 	//postion = ">" - entry.begin();
-	cout << "position = " << position << endl;
+	//cout << "position = " << position << endl;
 	return 0;
 }
