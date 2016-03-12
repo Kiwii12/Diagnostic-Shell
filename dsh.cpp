@@ -102,8 +102,7 @@ void* heartbeat( void* vars);
 bool redirectOverWrite( ofstream &fout, string filename);
 bool redirectAppend( ofstream &fout, string filename);
 
-bool checkForRedirect(ostream &outputStream, 
-	vector<string> entry, int checkPosition);
+int checkForRedirect(vector<string> entry);
 
 
 
@@ -277,6 +276,8 @@ int main()
 			}
 		    else //Fork Exec
 		    {
+		    	checkForRedirect(entry);
+
 		        char nonConstantString[300];
 		        char* arg_list[300];
 		        for( int i = 0; i < int(entry.size() ); i++ )
@@ -340,22 +341,18 @@ int spawn (char* program, char** arg_list)
   }
 }
 
-int checkForRedirect(vector<string> entry, int checkPosition)
+int checkForRedirect(vector<string> entry)
 {
-	if(entry.size() < (unsigned int)(checkPosition + 1) )
-	{
-		return 0;
-	}
+	vector<string>::iterator findThis;
+	findThis = find(entry.begin(), entry.end(), ">");
 
-	if (entry.at(checkPosition) == ">")
-	{
-		return 1;
-	}
+	int position = 0;
 
-	if (entry.at(checkPosition) == ">>")
+	if(findThis != entry.end())
 	{
-		return 2;
+		position = distance(entry.begin(), findThis);
 	}
-
+	//postion = ">" - entry.begin();
+	cout << "position = " << position << endl;
 	return 0;
 }

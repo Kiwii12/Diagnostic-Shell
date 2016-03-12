@@ -31,6 +31,8 @@
 //pthreads - for multithreading
 #include <pthread.h>
 
+#include <algorithm>
+
 
 //because who wants to see std:: all over the place
 using namespace std;
