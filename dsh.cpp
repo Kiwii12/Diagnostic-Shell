@@ -83,6 +83,7 @@
    03-11-2016	got redirection working finally. stopped tabs from breaking 
    				the program. redirection only works for fork execute commands.
    				Finally got dsh > to appear after exec commands
+   03-12-2016	descoveried overwrite error				
    @endverbatim
  *
  *****************************************************************************/
@@ -575,22 +576,33 @@ void handlePipe(vector<string> entry, int position)
 	cout << "handling pipe" << endl;
 
 
-	char nonConstantString[300];
-	char* arg_list1[300];
-	char* arg_list2[300];
+	char* arg_list1[300] = {'\0'};
 	for( int i = 0; i < position; i++ )
 	{
-	    strcpy(nonConstantString, (entry.at(i)).c_str());
+		char nonConstantString[300];
+	    strcpy(nonConstantString, entry.at(i).c_str());
+	    cout << "Put " << nonConstantString << " in arg_list1 at " << i << endl;
 	    arg_list1[i] = nonConstantString;
+	    cout << arg_list1[0] << " is in arg_list1[0]" << endl;
 	}
-	for( int i = position+1; i < int(entry.size() ); i++ )
-	{
-	    strcpy(nonConstantString, (entry.at(i)).c_str());
-	    arg_list2[i] = nonConstantString;
-	}
-	arg_list1[entry.size()] = nullptr;
-	arg_list2[entry.size()] = nullptr;
 
+	int j = 0;
+	char* arg_list2[301] = {'\0','\0'};
+	for( int i = position + 1; i < int(entry.size() ); i++ )
+	{
+		char temp[300];
+	    strcpy(temp, (entry.at(i)).c_str());
+	    cout << "Put " << temp << " in arg_list2 at " << j << endl;
+	    arg_list2[j] = temp;
+	    cout << arg_list2[j] << " is in arg_list2[j]" << endl;
+	    cout << arg_list1[0] << " is in arg_list1[0]" << endl;
+	    j++;
+	}
+	arg_list1[position] = nullptr;
+	arg_list2[j] = nullptr;
+
+	cout << arg_list1[0] << " is in arg_list1[0]" << endl;
+	cout << arg_list2[0] << " is in arg_list2[0]" << endl;
 	spawnPipe( arg_list1[0], arg_list1, arg_list2[0], arg_list2 );
 	return;
 }
