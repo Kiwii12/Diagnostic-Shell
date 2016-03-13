@@ -1,16 +1,16 @@
-DSH
+﻿DSH
 
 Description
-    This is a process idetification program and simple shell. 
-This program will introduce unix environment, system calls, signals, 
-the proc filesystem and the fork / exec system calls.   
+    This is a process identification program and simple shell. 
+This program will introduce UNIX environment, system calls, signals, 
+the proc file-system and the fork / exec system calls.   
 It will be a command line program with executable name: dsh.    
 It should present a prompt with a prompt string:  dsh> 
 and accept commands to be executed at the prompt.
 
 -UPDATE-
-now the program also offers redirection for linux commands using "<" or ">".
-One can also make use of piping for linux commands using "|".
+now the program also offers redirection for Linux commands using "<" or ">".
+One can also make use of piping for Linux commands using "|".
 There is also now a heartbeat function though "hb".
 Some functions now run on there own pthread.
     
@@ -40,12 +40,12 @@ a better list of all the used libraries can be found in structures.h
 Functions and Program structure
 Structure: the main program uses something very close to a switch statement.
 However this is done as if elses for the use of strings. The Program is
-sequencial. To add to modularity, and make main easier to read, many chunks
+sequential. To add to modularity, and make main easier to read, many chunks
 of code were pulled out into smaller functions. All of which can be found below main.
 
 List of functions:
     //function taken from sample code
-    spawn - creates a fork and executs on it
+    spawn - creates a fork and executes on it
 
     // primary functions for loop
     cmdnm - displays the command line call for a process id
@@ -75,9 +75,9 @@ Compiling the program:
 program. Also the command: "g++ -o dsh dsh.cpp -Wall -g -std=c++11" will as well
 
 Testing and Verification:
-    The code was tested by manually runing the program. all of the custom
-    commands wer run as well as many common commands such as ls. Even the shell
-    was run itside of itself.
+    The code was tested by manually running the program. all of the custom
+    commands were run as well as many common commands such as ls. Even the shell
+    was run inside of itself.
     Bug - for none custom commands, "dsh > " will not be displayed after.
     -UPDATE-
     no known bugs - HOWEVER
