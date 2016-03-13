@@ -1,0 +1,97 @@
+DSH
+
+Description
+    This is a process idetification program and simple shell. 
+This program will introduce unix environment, system calls, signals, 
+the proc filesystem and the fork / exec system calls.   
+It will be a command line program with executable name: dsh.    
+It should present a prompt with a prompt string:  dsh> 
+and accept commands to be executed at the prompt.
+
+-UPDATE-
+now the program also offers redirection for linux commands using "<" or ">".
+One can also make use of piping for linux commands using "|".
+There is also now a heartbeat function though "hb".
+Some functions now run on there own pthread.
+    
+- THIS WILL ONLY RUN ON LINUX -
+- SIGNAL WILL ONLY WORK IF YOU HAVE PERMISION TO USE KILL -
+
+Algorithms and libraries used:
+    As for Algorithms, nothing significant was used.
+List of Libraries:
+    //input
+        <iostream> 
+    //string functions
+        <string>, <string.h>   
+
+    //for system function commands
+        <stdio.h>, <stdlib.h>, <sys/types.h>, <unistd.h>   
+
+    //to open files
+        <fstream>  
+
+    //for kill command
+        <signal.h> 
+        
+-UPDATE-
+a better list of all the used libraries can be found in structures.h
+
+Functions and Program structure
+Structure: the main program uses something very close to a switch statement.
+However this is done as if elses for the use of strings. The Program is
+sequencial. To add to modularity, and make main easier to read, many chunks
+of code were pulled out into smaller functions. All of which can be found below main.
+
+List of functions:
+    //function taken from sample code
+    spawn - creates a fork and executs on it
+
+    // primary functions for loop
+    cmdnm - displays the command line call for a process id
+    help - displace information for custom commands (command is helpThis)
+    cwd - displays current working directory
+    signal - sends a signal to a process
+
+    systat - displays system statics
+    //systat helper functions
+    displayProcFile - displays the first line of a file
+    displayProcFileMeminfo - displays 2 lines of meminfo file
+    displayProcFileCPUInfo - displays lines 2 - 9 of cpuinfo file
+    
+-UPDATE-
+Many functions were moved to the file builtInShellCommands.cpp, All of them have
+doxygen style documentation with them there as well. There is one structure found
+in structures.h. The main file, dsh.cpp, now only holds main and the functions 
+related to fork and exec commands.
+    
+- Note Many of these are not direct commands in the program
+- Note spawn was taken from under the Gnu Public License.  Thus this code 
+is now as well.  You can find out more information about Gnu codes and the 
+GPL at   http://www.gnu.org/ .
+
+Compiling the program:
+    There is a make file provide. Using the make command will compile the
+program. Also the command: "g++ -o dsh dsh.cpp -Wall -g -std=c++11" will as well
+
+Testing and Verification:
+    The code was tested by manually runing the program. all of the custom
+    commands wer run as well as many common commands such as ls. Even the shell
+    was run itside of itself.
+    Bug - for none custom commands, "dsh > " will not be displayed after.
+    -UPDATE-
+    no known bugs - HOWEVER
+    remote pipes were not attempted. There for, they will not work!
+
+Submitted Files:
+    prog2.pdf, dsh.cpp, Makefile, builtInShellCommands.cpp, sturctures.h
+    
+prog1.pdf = This descriptive document of this project
+dsh.cpp = The code for this project
+Makefile = compiling tool for code
+builtInShellCommands = many helping functions to run the shell
+structures.h = holds all the inported libraries and the HbArgs structure
+
+
+-FAILURES-
+remote pipes - not implemented

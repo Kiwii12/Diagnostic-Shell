@@ -20,11 +20,10 @@
 #include <signal.h>
 
 //for time control
-#include <chrono>
+#include <chrono> //both for time increment
 #include <thread>
 
-#include <sys/time.h>
-#include <ctime>
+#include <sys/time.h> //get time of day
 
 //For Parsing the bloody entry because C++ doesn't seem to have a built in 
 //function for such a task
@@ -35,7 +34,7 @@
 #include <pthread.h>
 
 //used to find position of something in a vector
-#include <algorithm>
+#include <algorithm> //actually has lots of vector ops
 
 //used to redirect
 #include <fcntl.h>
@@ -46,20 +45,12 @@ using namespace std;
 
 #ifndef __sturctures__H__
 #define __sturctures__H__
-struct CmdmnArgs
-{
-	int pid;
-	string filename;
-	bool overWrite;
-};
 
 struct HbArgs
 {
 	int tinc;
 	int tend;
 	string tval;
-	string filename;
-	bool overWrite;
 };
 
 #endif

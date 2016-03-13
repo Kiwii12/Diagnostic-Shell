@@ -128,29 +128,93 @@ void signal(int signalNum, pid_t pid  )
     }
 }
 
+
+/***************************************************************************//**
+ * @author Johnny Ackerman
+ * 
+ * @par Description: displays incremental time for a set amount of time
+ * 
+ *
+ * @param[in]   int tinc 	- 	time increment
+ * @param[in]	int tend 	- 	future time to end at
+ * @param[in]	string tval -	type of time being used (seconds microseconds)
+ *
+*******************************************************************************/
 void heartbeat(int tinc, int tend, string tval  )
 {
 	int totalIncrement = 0;
-	struct timeval *tv;
+	struct timeval *tv; // time structure
+	tv = (timeval*)malloc(sizeof(timeval));
+
+	//varibles for use with localtime - converts the timeval structure
+	time_t nowtime;
+	struct tm *nowtm;
+	char tmbuf[64];
+	char buf[64];
+
+	if(tval != "s" && tval != "ms")
+	{
+		cout << "Invalid time, forcing seconds" << endl;
+		tval = "s";
+	}
+
+	//the time i am actually going to print out
 
 	//chrono::system_clock::time_point timePoint;
 	//auto timePoint;
 
 	while (totalIncrement < tend)
 	{
-		gettimeofday(tv, NULL);
-		cout << "test " << endl;
-		//auto timePoint = chrono::system_clock::now();
-		//auto timePoint = chrono::system_clock::time_point<chrono::system_clock, chrono::microseconds>;
-		//myout << put_time(localtime(chrono::system_clock::now()), "%F %T") << endl;
-		//myout << timePoint << endl;
+		if (gettimeofday(tv, NULL) == 0)
+		{
 
-		cout << totalIncrement << " totalIncrement" << endl;
+			nowtime = tv->tv_sec; // grab all of time seconds
+			nowtm = localtime(&nowtime); // fill nowtm stuct
+
+			//converts seconds
+			strftime(tmbuf, sizeof tmbuf, "%H:%M:%S", nowtm);
+
+			//appends micro seconds
+			snprintf(buf, sizeof buf, "%s.%06d", tmbuf, tv->tv_usec);
+
+			//string conversions
+			string timeS(tmbuf);
+			string temp(buf);
+
+			if(tval == "s")
+			{
+				cout << timeS << endl;
+				this_thread::sleep_until(chrono::system_clock::now() + chrono::seconds(tinc));
+			}
+			else
+			{
+				cout << temp << endl;
+				this_thread::sleep_until(chrono::system_clock::now() + chrono::microseconds(tinc));
+			}
+		}
 		//increase time
-		this_thread::sleep_until(chrono::system_clock::now() + chrono::seconds(tinc));
+		//this_thread::sleep_until(chrono::system_clock::now() + chrono::seconds(tinc));
 		totalIncrement += tinc;
 	}
-	cout << "after while loop";
+	free(tv);
+	return;
+}
+
+/***************************************************************************//**
+ * @author Johnny Ackerman
+ * 
+ * @par Description: p_thread version of heartbeat
+ * 
+ *
+ * @param[in]   void * args 	- all the args you could ever need
+ *
+*******************************************************************************/
+void * heartbeatThread( void * args)
+{
+	struct HbArgs *hbargs = (HbArgs*)args;
+	heartbeat(hbargs->tinc, hbargs->tend, hbargs->tval);
+	free(hbargs);
+	pthread_exit(NULL);
 }
 
 /***************************************************************************//**

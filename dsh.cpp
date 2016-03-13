@@ -56,9 +56,8 @@
  *
  * @section todo_bugs_modification_section Todo, Bugs, and Modifications
  * 
- * @bugs	calling any non-custom command will cause a second dsh> to appear
- *      on the first line but, none to appear on the next. Thus leaving
- *      cursor without a prompt. (still functional)
+ * @todo_bugs_modification_section
+ * @Todo -	Remote Pipes
  *
  * @bugs    signal doesn't seem to be working - seems to not have permission in
  *  ubuntu - will test in fedora.
@@ -83,7 +82,10 @@
    03-11-2016	got redirection working finally. stopped tabs from breaking 
    				the program. redirection only works for fork execute commands.
    				Finally got dsh > to appear after exec commands
-   03-12-2016	descoveried overwrite error				
+   03-12-2016	descoveried overwrite error			
+   				after overwrite error, pipes worked, then hit segfault error
+   				with threads, fixed that. documentation refatoring next.
+   				hb function finished as well - submitted
    @endverbatim
  *
  *****************************************************************************/
@@ -136,7 +138,6 @@ int main()
 
 	//thread stuff
 	pthread_t newThreads[5];
-	int threadCount = 0;
 	void* ptstatus;
 	bool isThread = false;
 
@@ -147,7 +148,6 @@ int main()
     //start of "switch" statement
     while(true)
     {
-	    //cout << "dsh > ";
 		// Grab cin inside the infinant loop in the off chance the user wants
 		// to maybe use a second command
 		getline(cin, entry1);
@@ -268,14 +268,30 @@ int main()
 		    }
 		    else if(entry1 == "hb")
 		    {
+		    	//if less than 3 args given
 		    	if ( entry.size() < 4)
 		    	{
 		    		cout << "Usage: hb <increment> <end time> <time unit>" << endl;
-		    		entry.erase(entry.begin());
+		    		entry.erase(entry.begin()); // just erase hb
 		    	}
 		    	else 
 		    	{
-		    		heartbeat(stoi(entry.at(1)), stoi(entry.at(2)), entry.at(3));
+		    		//fill structure to pass args
+		    		HbArgs * hbargs;
+		    		hbargs = (HbArgs*)malloc(sizeof(struct HbArgs));
+		    		hbargs->tinc = stoi(entry.at(1));
+		    		hbargs->tend = stoi(entry.at(2));
+		    		hbargs->tval = entry.at(3);
+		    		int didItWork = pthread_create(&newThreads[ 0], NULL, heartbeatThread, (void *)hbargs);
+
+		        	if( didItWork )
+		        	{
+		        		cout << "Unable to create thread " << endl;
+		        	}
+		        	else
+		        	{
+		        		isThread=true;//counter only used to recycle threads
+		        	}
 		    		//four args
 		        	entry.erase(entry.begin()); entry.erase(entry.begin());
 		        	entry.erase(entry.begin()); entry.erase(entry.begin());
@@ -290,7 +306,7 @@ int main()
 		    {
 		    	//in or out
 		    	bool in;
-		    	int position;
+		    	int position; //position of redirect
 		    	string filename;
 		    	position = checkForRedirect(entry, in );
 
@@ -327,11 +343,11 @@ int main()
 			        else
 			        {
 			        	pid_t childId = spawn( arg_list[0], arg_list );
-			        	waitpid(childId, status, WUNTRACED);
+			        	waitpid(childId, status, WUNTRACED); //fixed dsh error
 			        }
 			        for( int k = 0; k < count; k++)
 					{
-						//delete[] arg_list[k];
+						delete[] arg_list[k];
 					}
 			    }
 		        entry.clear();
@@ -377,10 +393,6 @@ int spawn (char* program, char** arg_list)
   else if (child_pid != 0)
   {
     /* This is the parent process.  */
-    //sleep(0);
-    // wait(status);
-    // sleep(0);
-    //cout << "dsh > ";
     return child_pid;
   }
   else 
@@ -393,6 +405,18 @@ int spawn (char* program, char** arg_list)
   }
 }
 
+/***************************************************************************//**
+ * @author Johnny Ackerman	- based off of spawn code 
+ * 
+ * @par Description: redirects command input or output from or to a file
+ *
+ * @param[in]   char* program 	-	the command in question
+ * @param[in]	char** arg_list - 	the arguments for the command
+ * @param[in]	string filename -	the file being read in from or output to
+ * @param[in]	bool in 		-	true if into a file, false if from a file
+ *
+ * @returns child_pid 			-	id of the generated thread
+*******************************************************************************/
 int spawnRedirect (char* program, char** arg_list, string filename, bool in)
 {
   pid_t child_pid;
@@ -438,6 +462,18 @@ int spawnRedirect (char* program, char** arg_list, string filename, bool in)
   }
 }
 
+
+/***************************************************************************//**
+ * @author Johnny Ackerman	- based off of spawn code 
+ * 
+ * @par Description: takes the output of the first command and gives it as 
+ *		input to the second command
+ *
+ * @param[in]   char* program1 	-	the first command in question
+ * @param[in]	char** arg_list1 - 	the first set of arguments for the command
+ * @param[in]   char* program2 	-	the second command in question
+ * @param[in]	char** arg_list2 - 	the second set of arguments for the command
+*******************************************************************************/
 void spawnPipe (char* program1, char** arg_list1, char* program2, char** arg_list2)
 {
 	// int* status = 0;
@@ -504,9 +540,23 @@ void spawnPipe (char* program1, char** arg_list1, char* program2, char** arg_lis
   }
 }
 
+/***************************************************************************//**
+ * @author Johnny Ackerman
+ * 
+ * @par Description: takes the output of the first command and gives it as 
+ *		input to the second command
+ *
+ * @param[in]   vector<string>	entry 	-	vector holding user inputed commands
+ *											and args
+ * @param[in,out] bool in 	- 	determines direction of redirect
+ *
+ * return 0	- no redirect found
+ * return position - location of redirect in entry
+*******************************************************************************/
 int checkForRedirect(vector<string> entry, bool &in)
 {
 	vector<string>::iterator findThis;
+	//places itterator at found position or end of entry
 	findThis = find(entry.begin(), (entry.end() -1), ">");
 	in = false;
 
@@ -514,29 +564,40 @@ int checkForRedirect(vector<string> entry, bool &in)
 
 	int position = 0;
 
+	//set position to redirection if found
 	position = distance(entry.begin(), findThis);
 	if(findThis != entry.end() -1)
 	{
 		return position;
 	}
 
+	//places itterator at found position or end of entry
 	findThis = find(entry.begin(), (entry.end() -1), "<");
 	in = true;
 
 	position = 0;
 
-	//cout << "in check redirect, findthis = " << findThis << endl;
-
+	//set position to redirection if found
 	if(findThis != entry.end() -1)
 	{
 		position = distance(entry.begin(), findThis);
 		return position;
 	}
-	//postion = ">" - entry.begin();
-	//cout << "position = " << position << endl;
 	return 0;
 }
 
+/***************************************************************************//**
+ * @author Johnny Ackerman
+ * 
+ * @par Description: looks for pipe in entry
+ *
+ * @param[in]   vector<string>	entry 	-	vector holding user inputed commands
+ *											and args
+ * @param[in,out] bool pipe 	- 	true if pipe, otherwise false
+ *
+ * return 0	- no redirect found
+ * return position - location of redirect in entry
+*******************************************************************************/
 int checkForPipe(vector<string> entry, bool &pipe)
 {
 	vector<string>::iterator findThis;
@@ -556,28 +617,40 @@ int checkForPipe(vector<string> entry, bool &pipe)
 	return 0;
 }
 
+/***************************************************************************//**
+ * @author Johnny Ackerman
+ * 
+ * @par Description: sets up the arguments for spawnPipe
+ *
+ * @param[in]   vector<string>	entry 	-	vector holding user inputed commands
+ *											and args
+ * @param[in]	int position 	- 	position of pipe in entry
+*******************************************************************************/
 void handlePipe(vector<string> entry, int position)
 {
 	char* arg_list1[300];
 	int i = 0; // keep i for memory deletion later
+	//set first arg array
 	for( i = 0; i < position; i++ )
 	{
 		arg_list1[i] = (char*)malloc(strlen(entry.at(i).c_str()));
 	    strcpy(arg_list1[i], entry.at(i).c_str());
 	}
 
-	int j = 0;
+	int j = 0; //also used for deletion
 	char* arg_list2[301];
+	//set second arg array
 	for( int k = position + 1; k < int(entry.size() ); k++ )
 	{
 		arg_list2[j] = (char*)malloc(strlen(entry.at(k).c_str()));
 	    strcpy(arg_list2[j], (entry.at(k)).c_str());
 	    j++;
 	}
-	// arg_list1[position] = nullptr;
-	// arg_list2[j] = nullptr;
 
+	//run commands
 	spawnPipe( arg_list1[0], arg_list1, arg_list2[0], arg_list2 );
+
+	//clear memory
 	for( int k = 0; k < i; k++)
 	{
 		delete[] arg_list1[k];
