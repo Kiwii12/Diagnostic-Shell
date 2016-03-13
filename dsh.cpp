@@ -136,23 +136,9 @@ int main()
 
 	//thread stuff
 	pthread_t newThreads[5];
-	int i = 0;
-	void* status;
-
-
-	//if it seems weried that some variables are declared in line
-	//and that some aren't, the ones declared up here should be
-	//prevelant though the whole program, where as any declared in
-	//line should be very local and not used again elsewhere.
-
-	//redirection
-	//int option;
-
-	//initialization of stream pointer
-	//ostream* myout;
-	//myout = &cout;
-
-	//*myout << "a test" << endl;
+	int threadCount = 0;
+	void* ptstatus;
+	bool isThread = false;
 
 
 	//initial dsh
@@ -211,7 +197,7 @@ int main()
 		        	//passed as a null pointer.
 		        	char currentPid[] = "nothing yet";
 		        	strcpy (currentPid, entry.at(1).c_str());
-		        	int didItWork = pthread_create(&newThreads[i%5], NULL, cmdnm, (void *)currentPid);
+		        	int didItWork = pthread_create(&newThreads[ 0], NULL, cmdnm, (void *)currentPid);
 
 		        	if( didItWork )
 		        	{
@@ -219,7 +205,7 @@ int main()
 		        	}
 		        	else
 		        	{
-		        		i++;//counter only used to recycle threads
+		        		isThread=true;//counter only used to recycle threads
 		        	}
 
 		        	//two args used
@@ -229,13 +215,14 @@ int main()
 		    else if( entry1 == "systat" )
 		    {
 		    	//even though its a pthread - it still takes no args.
-		        if( pthread_create(&newThreads[i%5], NULL, systat, NULL)) 
+		        if( pthread_create(&newThreads[ 0], NULL, systat, NULL)) 
 		        {
 		        	cout << "Unable to create thread " << endl;
 		        }//systat();
-		        else i++; //recycle threads
+		        else isThread=true; //recycle threads
 
 		        entry.erase(entry.begin()); 
+
 		    }
 		    else if( entry1 == "exit" || entry1 == "quit" ) 
 		    {
@@ -322,38 +309,38 @@ int main()
 		    	}
 		    	else
 		    	{
-			        char nonConstantString[300];
 			        char* arg_list[300];
-			        for( int i = 0; i < int(entry.size() ); i++ )
+			        int count = 0; // keep i for deletion
+			        while(!entry.empty())
 			        {
-			            strcpy(nonConstantString, (entry.at(i)).c_str());
-			            arg_list[i] = nonConstantString;
+			        	arg_list[count] = (char*)malloc(strlen(entry.at(0).c_str()));
+			            strcpy(arg_list[count], (entry.at(0)).c_str());
+			            count++;
+			            entry.erase(entry.begin());
 			        }
-			        arg_list[entry.size()] = nullptr;
-			        //cout << "Invalid Command" << endl;
-			        strcpy(nonConstantString, (entry1.c_str()));
-
 			        int *status = 0;
 			        if(position > 0)
 			        {
-			        	pid_t childId = spawnRedirect( nonConstantString, arg_list,filename,in );
+			        	pid_t childId = spawnRedirect( arg_list[0], arg_list,filename,in );
 			        	waitpid(childId, status, WUNTRACED);
 			        }
 			        else
 			        {
-			        	pid_t childId = spawn( nonConstantString, arg_list );
+			        	pid_t childId = spawn( arg_list[0], arg_list );
 			        	waitpid(childId, status, WUNTRACED);
 			        }
+			        for( int k = 0; k < count; k++)
+					{
+						//delete[] arg_list[k];
+					}
 			    }
-
 		        entry.clear();
 		    }
-		    
-
-		    for(int j = 0; j < 5; j++)
-		    {
-		    	pthread_join(newThreads[j], &status);
-		    }
+		    // for(int j = 0; j < 5; j++)
+		    // {
+		    if(isThread)
+		    	pthread_join(newThreads[0], &ptstatus);
+		    // }
 
 		}
 	    cout << "dsh > ";
@@ -453,8 +440,6 @@ int spawnRedirect (char* program, char** arg_list, string filename, bool in)
 
 void spawnPipe (char* program1, char** arg_list1, char* program2, char** arg_list2)
 {
-	cout << "entered spawnPipe" << endl;
-
 	// int* status = 0;
   pid_t child_pid;
   pid_t child_pid2;
@@ -573,36 +558,33 @@ int checkForPipe(vector<string> entry, bool &pipe)
 
 void handlePipe(vector<string> entry, int position)
 {
-	cout << "handling pipe" << endl;
-
-
-	char* arg_list1[300] = {'\0'};
-	for( int i = 0; i < position; i++ )
+	char* arg_list1[300];
+	int i = 0; // keep i for memory deletion later
+	for( i = 0; i < position; i++ )
 	{
-		char nonConstantString[300];
-	    strcpy(nonConstantString, entry.at(i).c_str());
-	    cout << "Put " << nonConstantString << " in arg_list1 at " << i << endl;
-	    arg_list1[i] = nonConstantString;
-	    cout << arg_list1[0] << " is in arg_list1[0]" << endl;
+		arg_list1[i] = (char*)malloc(strlen(entry.at(i).c_str()));
+	    strcpy(arg_list1[i], entry.at(i).c_str());
 	}
 
 	int j = 0;
-	char* arg_list2[301] = {'\0','\0'};
-	for( int i = position + 1; i < int(entry.size() ); i++ )
+	char* arg_list2[301];
+	for( int k = position + 1; k < int(entry.size() ); k++ )
 	{
-		char temp[300];
-	    strcpy(temp, (entry.at(i)).c_str());
-	    cout << "Put " << temp << " in arg_list2 at " << j << endl;
-	    arg_list2[j] = temp;
-	    cout << arg_list2[j] << " is in arg_list2[j]" << endl;
-	    cout << arg_list1[0] << " is in arg_list1[0]" << endl;
+		arg_list2[j] = (char*)malloc(strlen(entry.at(k).c_str()));
+	    strcpy(arg_list2[j], (entry.at(k)).c_str());
 	    j++;
 	}
-	arg_list1[position] = nullptr;
-	arg_list2[j] = nullptr;
+	// arg_list1[position] = nullptr;
+	// arg_list2[j] = nullptr;
 
-	cout << arg_list1[0] << " is in arg_list1[0]" << endl;
-	cout << arg_list2[0] << " is in arg_list2[0]" << endl;
 	spawnPipe( arg_list1[0], arg_list1, arg_list2[0], arg_list2 );
+	for( int k = 0; k < i; k++)
+	{
+		delete[] arg_list1[k];
+	}
+	for( int k = 0; k < j; k++)
+	{
+		delete[] arg_list2[k];
+	}
 	return;
 }

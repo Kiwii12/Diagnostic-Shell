@@ -131,24 +131,26 @@ void signal(int signalNum, pid_t pid  )
 void heartbeat(int tinc, int tend, string tval  )
 {
 	int totalIncrement = 0;
-	//struct timeval *tv;
+	struct timeval *tv;
 
 	//chrono::system_clock::time_point timePoint;
 	//auto timePoint;
 
 	while (totalIncrement < tend)
 	{
-		//gettimeofday(tv, NULL);
+		gettimeofday(tv, NULL);
 		cout << "test " << endl;
 		//auto timePoint = chrono::system_clock::now();
 		//auto timePoint = chrono::system_clock::time_point<chrono::system_clock, chrono::microseconds>;
 		//myout << put_time(localtime(chrono::system_clock::now()), "%F %T") << endl;
 		//myout << timePoint << endl;
 
+		cout << totalIncrement << " totalIncrement" << endl;
 		//increase time
 		this_thread::sleep_until(chrono::system_clock::now() + chrono::seconds(tinc));
 		totalIncrement += tinc;
 	}
+	cout << "after while loop";
 }
 
 /***************************************************************************//**
@@ -167,7 +169,7 @@ void * systat( void * doesNothing )
 	displayProcFile( "version");
 	displayProcFile("uptime");
 	displayProcFileMeminfo();
-	displayProcFileCPUInfo();	
+	displayProcFileCPUInfo();
 	pthread_exit(NULL);
 }
 
